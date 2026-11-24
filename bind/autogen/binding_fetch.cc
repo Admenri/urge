@@ -22,32 +22,11 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-// Same shape as NetworkEvent#data: the body belongs to the Fetch object, so
-// phase 2 only reads a pointer and a length out of it.
-RB_FUNC(Fetch_Body) {
-  auto* self_obj = GetSelfData<urge::Fetch>(self);
-  CheckArgc(argc, 0);
-
-  const char* body = nullptr;
-  size_t size = 0;
-
-  {
-    const std::string& payload = self_obj->body();
-    body = payload.data();
-    size = payload.size();
-  }
-
-  return rb_enc_str_new(body, static_cast<long>(size),
-                        rb_ascii8bit_encoding());
-}
-void DefineFetchBody(VALUE klass) {
-  DefineMethod(klass, "body", Fetch_Body);
-}
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Fetch  (core/network/network.h:128-160)
+// Fetch  (core/network/network.h:124-157)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(Fetch);
@@ -242,19 +221,19 @@ RB_FUNC(Fetch_GetStatusText) {
   return value;
 }
 
-RB_FUNC(Fetch_GetText) {
+RB_FUNC(Fetch_GetBody) {
   auto* self_obj = GetSelfData<urge::Fetch>(self);
 
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
   {
-    result = new std::string(self_obj->GetText());
+    result = new std::string(self_obj->GetBody());
   }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
+      rb_ascii8bit_encoding());
   delete result;
   return value;
 }
@@ -341,12 +320,11 @@ void InitFetchBinding() {
   DefineMethod(klass, "success?", Fetch_IsSuccess);
   DefineMethod(klass, "status", Fetch_GetStatus);
   DefineMethod(klass, "status_text", Fetch_GetStatusText);
-  DefineMethod(klass, "text", Fetch_GetText);
+  DefineMethod(klass, "body", Fetch_GetBody);
   DefineMethod(klass, "error", Fetch_GetError);
   DefineMethod(klass, "progress", Fetch_GetProgress);
   DefineMethod(klass, "header", Fetch_GetHeader);
   DefineMethod(klass, "headers", Fetch_GetHeaders);
-  DefineFetchBody(klass);
   InitFetchBindingAppend(klass);
 }
 // --- GENERATED END ---

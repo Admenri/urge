@@ -342,6 +342,32 @@ return SetupSelfData(self, object.get());
 `rb_utf8_str_new_cstr` / `rb_enc_str_new_cstr`，但生成器不用它们：前者假定 NUL 结尾，
 而 IR 里的 `const char*` 并不保证。
 
+### 网络接口：所有正文都是二进制
+
+`core/network/network.h` 直接标记 `NetworkEvent::GetData()` 与 `Fetch::GetBody()` 为
+`URGE_BINDING(Name: "data" / "body", Binary: true)`，无需特殊手写 getter：
+
+| Ruby 接口 | 契约 |
+| --- | --- |
+| `NetworkEvent#data` | 所有消息正文均为 ASCII-8BIT String；收到文本帧也不解码、不改编码 |
+| `WebSocket#send(data)` | 唯一的消息发送接口；按 String 的指针与长度发送二进制帧，不做编码转换 |
+| `Fetch#body` | 所有 HTTP 响应正文均为 ASCII-8BIT String，不探测 charset、不自动解码 |
+| `Fetch.new` / `Network.fetch` 的 `body` 参数 | 请求正文也是原始字节，保留 NUL 与非 UTF-8 字节 |
+
+`NetworkEvent::Type` 统一为 `OPEN=0`、`MESSAGE=1`、`CLOSE=2`、`ERROR=3`，不再按消息
+编码区分事件。旧 `text`、`send_text`、`send_binary` 方法与 `TEXT`、`BINARY` 常量不导出。
+`send` 必须恰好接收一个参数；`data` / `body` getter 必须零参数，生成的 `CheckArgc`
+同时拒绝少传与多传。字符串转换始终显式传长度，空正文也保持 ASCII-8BIT。
+
+**二进制契约只针对正文，不针对文本元信息**：URL、HTTP 状态文本、响应头、关闭原因、
+错误消息等未标记 `Binary` 的返回值仍以 UTF-8 String（或 UTF-8 String 的 Array）提供，
+状态码等数值仍是 Integer。调用者需要文本时，应按应用协议或响应头显式选择正文编码，
+而不是依赖接口猜测。
+
+窄范围回归：`python -I tools/tests/test_network_bindings.py`。读取真实头文件与现有 IR，
+仅在临时目录验证冷生成、旧 getter 增量迁移、字节/mtime 幂等、二进制编码、参数数量、
+旧导出移除与手写内容保留；不启动引擎或 Ruby VM，也不替代网络通信集成测试。
+
 ### Win32 宏污染（`cruby_utils.h` 顶部的 `#undef`，勿删）
 
 `<windows.h>` 会沿着 `ruby.h` → `ruby/win32.h` → `<winsock2.h>` 进入**每一个**胶水
@@ -769,7 +795,8 @@ GPU::MAP_READ | GPU::MAP_WRITE   # => 3
 - 公开且带标记的整数 `static constexpr` 也进入同一 `constants` 列表，例如
   `Touch::kMaxFingers` → `Touch::MAX_FINGERS`。不自动导出内部容量、私有字段或其它常量类型。
 - `NetworkEvent`、`WebSocket`、`Mouse`、`Input` 的常量已迁入标记声明，冷生成与增量生成一致；
-  旧手写常量注册已移除，`NetworkEvent#data` 等非标准方法仍保留手写实现。
+  旧手写常量注册已移除。`NetworkEvent#data` 与 `Fetch#body` 也已通过 `Binary: true`
+  生成，旧正文手写 helper 按下面的窄范围规则迁移。
 - 窄范围回归：`python -I tools/tests/test_binding_constants.py`；加 `--ruby-checks` 可输出
   真实 Ruby VM 的纯常量断言，不包含网络通信测试。
 
@@ -809,7 +836,7 @@ class Sprite : public Node {
 | 覆盖项 | 内容 |
 | --- | --- |
 | `TABLE_MANUAL` | `Table#[]` / `#[]=` 的手写实现（写进 `binding_table.cc` 的手写区） |
-| `EXTRA_INIT_CALLS` | 追加到 `Init*Binding()` 末尾的语句（如 `NetworkEvent` → `DefineNetworkEventData(klass);`） |
+| `EXTRA_INIT_CALLS` | 追加到 `Init*Binding()` 末尾的语句（如 `Video` → `DefineVideoPlayerInfo(klass);`）；网络正文不再有追加注册 |
 | `EXTRA_INIT_BINDING_CALLS` | 追加到**全局** `InitBindings()` 末尾的语句，用于 IR 里根本没有条目的绑定（`Win32API` → `InitWin32APIBinding();`） |
 | `HANDWRITTEN_SEED` | 新文件首次生成时播种的手写区内容 |
 
@@ -817,7 +844,8 @@ class Sprite : public Node {
 
 ### 生成物分块
 
-每个 `.cc` 固定由四个块组成，重跑时只替换两块 `GENERATED`，另外两块逐字保留：
+每个 `.cc` 固定分成下面的生成区与手写区，重跑时替换两块 `GENERATED`；手写区逐字保留，
+仅已知旧网络正文 helper 的迁移有下面明确限定的例外：
 
 ```cpp
 // --- GENERATED INCLUDES BEGIN ---   ← 每次重写
@@ -879,6 +907,25 @@ void InitTilemapVXBindingAppend(VALUE klass) {
 （如 `InitTableBinding()` 里的 `Table_Get`）时符号已被声明。**不要**把需要跨文件使用
 的东西放手动区——手写内容只出现在它自己的翻译单元里，跨文件请加进 `*_INCLUDES` 区
 （同样逐字保留）或提到 `cruby_utils.h`。
+
+### 旧网络正文 helper 的增量迁移
+
+`NetworkEvent_Data` / `DefineNetworkEventData` 与 `Fetch_Body` / `DefineFetchBody`
+曾经在 `HANDWRITTEN` 中调用未导出的 `data()` / `body()` 内部访问器。现在这些 C++
+访问器已被 `GetData()` / `GetBody()` 替代，仅删除种子或追加注册还不够：已有手写区会
+逐字保留，旧函数即使不再注册也会导致编译失败。
+
+因此生成器只在**来源头文件、输出文件名及新 binary getter 的 IR 签名全部匹配**时，
+识别并删除这两组已知 helper：旧种子的直接引用实现，以及后来增量生成物中的
+指针/长度实现（包含其零参数检查版本）。函数体按白名单核对，允许空白排版差异；
+只删除匹配的函数、其已知相邻说明注释及完整的旧注册语句。`HANDWRITTEN INIT` 中的
+旧注册也按同一规则移除，周围函数、其它手写实现和 `HANDWRITTEN INCLUDES` 均不清空。
+迁移后的正文 getter 完全来自 GENERATED 区，冷生成与未定制的旧生成物迁移结果一致。
+
+若旧 helper 被定制、或其它手写代码仍引用它，生成器报 `migrate it manually`，
+**不重写该 `.cc` 文件**，而不是猜测修改意图或静默丢弃补丁。需要将补丁手动迁移到
+新 getter/初始化器；其它类的手写种子与覆盖项不受影响。此迁移不是通用的手写区擦除
+机制，也不会改写尚未导出新 binary getter 的旧 IR。
 
 ### 当前手写项
 

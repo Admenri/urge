@@ -22,27 +22,6 @@
 namespace binding {
 
 // --- HANDWRITTEN BEGIN ---
-// `data()` answers a `const std::string&` the object owns, so phase 2 can hand
-// back a pointer and a length without copying or owning anything.
-RB_FUNC(NetworkEvent_Data) {
-  auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
-  CheckArgc(argc, 0);
-
-  const char* data = nullptr;
-  size_t size = 0;
-
-  {
-    const std::string& payload = self_obj->data();
-    data = payload.data();
-    size = payload.size();
-  }
-
-  return rb_enc_str_new(data, static_cast<long>(size),
-                        rb_ascii8bit_encoding());
-}
-void DefineNetworkEventData(VALUE klass) {
-  DefineMethod(klass, "data", NetworkEvent_Data);
-}
 // --- HANDWRITTEN END ---
 
 // --- GENERATED BEGIN ---
@@ -82,19 +61,19 @@ RB_FUNC(NetworkEvent_GetType) {
   return LONG2NUM(result);
 }
 
-RB_FUNC(NetworkEvent_GetText) {
+RB_FUNC(NetworkEvent_GetData) {
   auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
 
   CheckArgc(argc, 0);
   std::string* result = nullptr;
 
   {
-    result = new std::string(self_obj->GetText());
+    result = new std::string(self_obj->GetData());
   }
 
   VALUE value = rb_enc_str_new(
       result->data(), static_cast<long>(result->size()),
-      rb_utf8_encoding());
+      rb_ascii8bit_encoding());
   delete result;
   return value;
 }
@@ -154,21 +133,18 @@ void InitNetworkEventBinding() {
 
   DefineMethod(klass, "initialize", NetworkEvent_initialize);
   DefineMethod(klass, "type", NetworkEvent_GetType);
-  DefineMethod(klass, "text", NetworkEvent_GetText);
+  DefineMethod(klass, "data", NetworkEvent_GetData);
   DefineMethod(klass, "code", NetworkEvent_GetCode);
   DefineMethod(klass, "reason", NetworkEvent_GetReason);
   DefineMethod(klass, "message", NetworkEvent_GetErrorMessage);
   rb_const_set(klass, rb_intern("OPEN"),
                WrapConstant(urge::NetworkEvent::Open));
-  rb_const_set(klass, rb_intern("TEXT"),
-               WrapConstant(urge::NetworkEvent::Text));
-  rb_const_set(klass, rb_intern("BINARY"),
-               WrapConstant(urge::NetworkEvent::Binary));
+  rb_const_set(klass, rb_intern("MESSAGE"),
+               WrapConstant(urge::NetworkEvent::Message));
   rb_const_set(klass, rb_intern("CLOSE"),
                WrapConstant(urge::NetworkEvent::Close));
   rb_const_set(klass, rb_intern("ERROR"),
                WrapConstant(urge::NetworkEvent::Error));
-  DefineNetworkEventData(klass);
   InitNetworkEventBindingAppend(klass);
 }
 // --- GENERATED END ---

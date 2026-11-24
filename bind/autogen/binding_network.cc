@@ -29,7 +29,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Network  (core/network/network.h:185-205)
+// Network  (core/network/network.h:180-200)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Network_Update) {

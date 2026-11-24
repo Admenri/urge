@@ -59,26 +59,69 @@ check('all exported Ruby constants') do
   end
 end
 
-check('all 373 Ruby constant values match native definitions') do
+check('all Ruby constant values match native definitions') do
 __CONSTANT_CHECKS__
 end
 
-check('GET text, binary body, headers and idempotent start') do
+check('GET body is raw bytes, with headers and idempotent start') do
   fetch = request('/get')
   assert(fetch.success? && fetch.status == 200 && fetch.status_text == 'OK', 'GET status')
-  assert(fetch.text == 'fetch 中文', "text mismatch: #{fetch.text.inspect}")
   assert(fetch.body == 'fetch 中文'.b && fetch.body.encoding == Encoding::BINARY, 'binary body')
   assert(fetch.header('x-TEST') == 'final' && fetch.header('missing') == '', 'header lookup')
   assert(fetch.progress == 1.0 && fetch.error.empty?, 'completion state')
   fetch.start
-  assert(fetch.done? && fetch.text == 'fetch 中文', 'start must be idempotent')
+  assert(fetch.done? && fetch.body == 'fetch 中文'.b, 'start must be idempotent')
 end
 
-check('POST binary body and request header') do
-  body = "\x00\xffpost\x00".b
-  fetch = request('/echo', 'POST', body, ['X-Request: fixture'])
-  assert(fetch.success? && fetch.status == 201, 'POST status')
-  assert(fetch.body == body && fetch.header('x-request') == 'fixture', 'POST echo')
+check('public payload API is binary-only, with no legacy accessors') do
+  assert(!Fetch.instance_methods(false).include?(:text), 'legacy Fetch#text remains')
+  assert(!NetworkEvent.instance_methods(false).include?(:text), 'legacy event#text remains')
+  assert(!WebSocket.instance_methods(false).include?(:send_text), 'legacy send_text remains')
+  assert(!WebSocket.instance_methods(false).include?(:send_binary), 'legacy send_binary remains')
+  assert(WebSocket.instance_method(:send).owner == WebSocket, 'send is only inherited Object#send')
+  assert(!NetworkEvent.const_defined?(:TEXT, false) && !NetworkEvent.const_defined?(:BINARY, false), 'legacy event constants remain')
+  event = NetworkEvent.new
+  assert(event.data.empty? && event.data.encoding == Encoding::BINARY, 'non-message data must be empty binary')
+  begin
+    event.data(1)
+    raise 'event.data accepted an argument'
+  rescue ArgumentError
+  end
+  fetch = Fetch.new(BASE + '/get')
+  begin
+    fetch.body(1)
+    raise 'fetch.body accepted an argument'
+  rescue ArgumentError
+  end
+end
+
+check('POST body ignores Ruby encoding and preserves request headers') do
+  body = (0..255).to_a.pack('C*') * 1024
+  [body, body.dup.force_encoding('UTF-8'), body.dup.force_encoding('UTF-16LE'), ''.b].each do |payload|
+    fetch = request('/echo', 'POST', payload, ['X-Request: fixture', 'Content-Type: application/octet-stream'])
+    assert(fetch.success? && fetch.status == 201, 'POST status')
+    assert(fetch.body == payload.b && fetch.body.encoding == Encoding::BINARY, 'POST binary echo')
+    assert(fetch.header('x-request') == 'fixture', 'POST header')
+  end
+end
+
+check('GET and HTTP error preserve all bytes without text decoding') do
+  expected = (0..255).to_a.pack('C*') * 1024
+  ['/binary', '/binary-status', '/binary-chunked'].each do |path|
+    fetch = request(path)
+    status = path == '/binary-status' ? 418 : 200
+    assert(fetch.status == status && fetch.success? == (status == 200), "#{path}: status")
+    assert(fetch.body == expected && fetch.body.encoding == Encoding::BINARY, "#{path}: binary body")
+    assert(fetch.body.length == expected.bytesize && fetch.body.valid_encoding?, "#{path}: byte-string semantics")
+    copy = fetch.body
+    copy.setbyte(0, 255)
+    assert(fetch.body == expected, "#{path}: mutating a returned body changed the response")
+  end
+end
+
+check('empty Fetch body remains binary') do
+  fetch = request('/empty')
+  assert(fetch.success? && fetch.body.empty? && fetch.body.encoding == Encoding::BINARY, 'empty binary response')
 end
 
 check('redirect exposes final response headers') do
@@ -161,15 +204,15 @@ ensure
   Network.timeout = 30
 end
 
-check('WebSocket UTF-8 text, ping and close') do
-  ws = socket
-  ws.send_text('echo 中文')
+check('WebSocket binary send, ping and close') do
+  ws = socket('/binary-only')
+  ws.send('echo 中文')
   event = next_event(ws)
-  assert(event.type == NetworkEvent::TEXT && event.text == 'echo 中文', 'text echo')
-  assert(event.data == 'echo 中文'.b, 'event binary data')
-  ws.send_ping('client-ping')
+  assert(event.type == NetworkEvent::MESSAGE && event.data == 'echo 中文'.b, 'binary echo')
+  assert(event.data.encoding == Encoding::BINARY, 'message encoding')
+  ws.send_ping("client\x00\xffping".b)
   event = next_event(ws)
-  assert(event.type == NetworkEvent::TEXT && event.text == 'client-ping-seen', "unexpected ping event: #{event.type}")
+  assert(event.type == NetworkEvent::MESSAGE && event.data == 'client-ping-seen'.b, "unexpected ping event: #{event.type}")
   ws.close(1000, 'finished')
   assert(ws.ready_state == WebSocket::CLOSING || ws.ready_state == WebSocket::CLOSED, 'close does not update state')
   event = next_event(ws)
@@ -177,23 +220,67 @@ check('WebSocket UTF-8 text, ping and close') do
   assert(ws.ready_state == WebSocket::CLOSED, 'closed state')
 end
 
-check('empty text and binary WebSocket messages') do
-  ws = socket
-  ws.send_text('')
+check('empty WebSocket messages remain binary for any Ruby encoding') do
+  ws = socket('/binary-only')
+  ['', ''.b].each do |value|
+    ws.send(value)
+    event = next_event(ws)
+    assert(event.type == NetworkEvent::MESSAGE && event.data.empty?, 'empty message')
+    assert(event.data.encoding == Encoding::BINARY, 'empty message encoding')
+  end
+  ws.close
+end
+
+check('WebSocket sends raw bytes without Ruby encoding conversion') do
+  ws = socket('/binary-only')
+  text = [0xFEFF].pack('U') + "echo\x00中文\x00"
+  [text, text.b, text.b.force_encoding('UTF-16LE')].each do |value|
+    ws.send(value)
+    event = next_event(ws)
+    assert(event.type == NetworkEvent::MESSAGE && event.data == text.b, 'NUL/BOM bytes changed')
+    assert(event.data.encoding == Encoding::BINARY, 'message encoding')
+    copy = event.data
+    copy.clear
+    assert(event.data == text.b, 'mutating returned data changed the event')
+  end
+  [125, 126, 65535, 65536].each do |size|
+    data = (0..255).to_a.pack('C*') * ((size + 255) / 256)
+    data = data.byteslice(0, size)
+    ws.send(data)
+    event = next_event(ws)
+    assert(event.type == NetworkEvent::MESSAGE && event.data == data, "frame length boundary #{size}")
+  end
+  ws.close
+end
+
+check('wire text and binary frames share the same raw message API') do
+  ws = socket('/mixed')
+  expected = ([0xFEFF].pack('U') + "echo\x00中文\x00").b
+  [expected, expected, ''.b, ''.b].each do |bytes|
+    event = next_event(ws)
+    assert(event.type == NetworkEvent::MESSAGE && event.data == bytes, 'wire type leaked into message API')
+    assert(event.data.encoding == Encoding::BINARY, 'wire text was decoded or tagged UTF-8')
+  end
+  ws.close
+end
+
+check('fragmented binary with an interleaved ping') do
+  ws = socket('/binary-fragments')
   event = next_event(ws)
-  assert(event.type == NetworkEvent::TEXT && event.text.empty?, 'empty text event')
-  ws.send_binary(''.b)
+  expected = (0..255).to_a.pack('C*') * 1024
+  assert(event.type == NetworkEvent::MESSAGE && event.data == expected, 'fragmented binary bytes')
+  assert(event.data.encoding == Encoding::BINARY, 'fragmented binary encoding')
   event = next_event(ws)
-  assert(event.type == NetworkEvent::BINARY && event.data.empty?, 'empty binary event')
+  assert(event.type == NetworkEvent::MESSAGE && event.data == 'server-pong-seen'.b, 'binary server ping not answered')
   ws.close
 end
 
 check('large binary WebSocket frame') do
   ws = socket
   data = ("\x00\xfflarge\x00".b * 25000)
-  ws.send_binary(data)
+  ws.send(data)
   event = next_event(ws)
-  assert(event.type == NetworkEvent::BINARY && event.data == data, "binary frame truncated: #{event.data.bytesize}")
+  assert(event.type == NetworkEvent::MESSAGE && event.data == data, "binary frame truncated: #{event.data.bytesize}")
   assert(event.data.encoding == Encoding::BINARY, 'binary event encoding')
   ws.close
 end
@@ -201,9 +288,10 @@ end
 check('fragmented text with an interleaved ping') do
   ws = socket('/fragments')
   event = next_event(ws)
-  assert(event.type == NetworkEvent::TEXT && event.text == 'fragment-中文', "fragmented message: #{event.text.inspect}")
+  assert(event.type == NetworkEvent::MESSAGE && event.data == 'fragment-中文'.b, "fragmented message: #{event.data.inspect}")
+  assert(event.data.encoding == Encoding::BINARY, 'wire text must be returned as bytes')
   event = next_event(ws)
-  assert(event.type == NetworkEvent::TEXT && event.text == 'server-pong-seen', 'server ping not answered')
+  assert(event.type == NetworkEvent::MESSAGE && event.data == 'server-pong-seen'.b, 'server ping not answered')
   ws.close
 end
 
@@ -231,8 +319,8 @@ end
 
 check('WebSocket.new connects') do
   ws = socket('/echo', true)
-  ws.send_text('direct')
-  assert(next_event(ws).text == 'direct', 'direct socket echo')
+  ws.send('direct')
+  assert(next_event(ws).data == 'direct'.b, 'direct socket echo')
   ws.close
 end
 

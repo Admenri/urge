@@ -176,11 +176,7 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     return static_cast<int32_t>(main_queue_.size());
   }
 
-  void SendText(const std::string& data) override {
-    QueueSend(data, CURLWS_TEXT);
-  }
-
-  void SendBinary(const std::string& data) override {
+  void Send(const std::string& data) override {
     QueueSend(data, CURLWS_BINARY);
   }
 
@@ -299,17 +295,13 @@ class CurlWebSocketImpl final : public WebSocketImpl {
     if (!in_message_) {
       in_message_ = true;
       fragment_.clear();
-      fragment_type_ = (meta->flags & CURLWS_TEXT) ? NetworkEvent::Text
-                                                   : NetworkEvent::Binary;
     }
     fragment_ += chunk;
     // bytesleft describes the current frame; CONT means another frame follows.
     if (meta->bytesleft > 0 || (meta->flags & CURLWS_CONT))
       return;
 
-    auto event = MakeEvent(fragment_type_);
-    if (fragment_type_ == NetworkEvent::Text)
-      event->text_ = fragment_;
+    auto event = MakeEvent(NetworkEvent::Message);
     event->data_ = std::move(fragment_);
     PushEvent(std::move(event));
     in_message_ = false;
@@ -480,7 +472,6 @@ class CurlWebSocketImpl final : public WebSocketImpl {
   int32_t max_events_ = 1024;
 
   std::string fragment_;
-  int32_t fragment_type_ = NetworkEvent::Text;
   bool in_message_ = false;
   std::string control_;
   bool close_sent_ = false;

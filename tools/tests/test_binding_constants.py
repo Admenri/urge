@@ -27,7 +27,7 @@ WEBGPU = ROOT / "third_party/wgpu-cmake/wgpu-native/ffi/webgpu-headers/webgpu.h"
 # Independent inventory of existing non-GPU constants and the new public
 # selectors. Names and values must survive both cold and incremental generation.
 EXPECTED = {
-    "NetworkEvent": {"OPEN": 0, "TEXT": 1, "BINARY": 2, "CLOSE": 3, "ERROR": 4},
+    "NetworkEvent": {"OPEN": 0, "MESSAGE": 1, "CLOSE": 2, "ERROR": 3},
     "WebSocket": {"CONNECTING": 0, "OPEN": 1, "CLOSING": 2, "CLOSED": 3},
     "Mouse": {"LEFT": 1, "MIDDLE": 2, "RIGHT": 3, "X1": 4, "X2": 5},
     "Input": {
@@ -336,7 +336,7 @@ class ProjectConstantTests(unittest.TestCase):
             after = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in out.iterdir()}
             self.assertEqual(after, before)
             self.assertIn("// retained custom data glue", source.read_text(encoding="utf-8"))
-            self.assertIn('DefineMethod(klass, "data", NetworkEvent_Data);', source.read_text(encoding="utf-8"))
+            self.assertIn('DefineMethod(klass, "data", NetworkEvent_GetData);', source.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

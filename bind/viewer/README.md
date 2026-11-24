@@ -6,7 +6,7 @@
 本目录不参与编译，不产生任何 C++ 目标，`bind/CMakeLists.txt` 也不会 glob 到这里。
 
 ```
-bind/api_reference.json ──┬──▶ index.html + config.js   浏览器 UI（类树 / 搜索 / 签名 / 未能导出项）
+bind/api_reference.json ──┬──▶ index.html + config.js   浏览器 UI（类树 / 搜索 / 签名 / 常量 / 未能导出项）
                           ├──▶ viewer.py       命令行查询（可被脚本或智能体调用）
                           └──▶ api_embed.js    file:// / 离线兜底快照（由 viewer.py embed 生成）
 ```
@@ -97,7 +97,9 @@ Sprite#bitmap          实例方法 / 属性读取侧
 Sprite#bitmap=         属性写入侧（与上一行是同一条 ATTR()）
 Sprite.bitmap          类方法 / 类属性
 Font.default_bold      静态属性
-Input.press?           模块函数（模块侧一律用 `.`）
+Input.press?           模块函数（函数调用用 `.`）
+Input::DOWN            类或模块常量（常量查找用 `::`）
+WebSocket::OPEN        类常量
 Table#[]=              字面名字里就带 `=` 的成员
 ```
 
@@ -106,6 +108,10 @@ Table#[]=              字面名字里就带 `=` 的成员
 ```bash
 # Sprite 的完整 Ruby 面（构造、实例方法、属性，属性会标出写入侧）
 python bind/viewer/viewer.py show Sprite
+
+# 常量的 Ruby 名称、类型、值（C++ 初始化表达式）和来源
+python bind/viewer/viewer.py show Input::DOWN
+python bind/viewer/viewer.py search WebSocket::OPEN
 
 # 我该用哪个方法画图？搜一下
 python bind/viewer/viewer.py search blt
@@ -119,6 +125,16 @@ python bind/viewer/viewer.py stats --json
 
 ## 呈现规则
 
+- **二进制正文**：带 `Binary: true` 的返回值标注为 `binary`，说明返回原始 ASCII-8BIT 字节且不解码。
+  网络接口的 `NetworkEvent#data` / `Fetch#body` 使用该规则，WebSocket 统一通过 `#send(data)` 发送二进制消息。
+
+- **常量**在类、模块详情中单独列出 Ruby 名称（例如 `Input::DOWN`）、`Integer` 类型、
+  值与 C++ 成员；计入导航、总览和 CLI 的成员统计。名称可点击复制，搜索支持名称、
+  `Owner::NAME`、C++ 成员、类型和值；如果 IR 带 `doc` / `description` 也会展示和检索。
+  `index.html#Input::DOWN` 可直接定位并高亮常量。
+  值列保留 IR 的 **C++ 初始化表达式**（例如 `2`、`1ULL << 63`、`static_cast<...>(...)`），
+  不执行表达式、不假装它是 Ruby 代码，也不猜测隐式枚举的数值；没有显式初始化器时提示查看 C++ 成员。
+  旧 IR 缺少 `constants` 字段时按没有常量处理，不影响原有方法和属性。
 - **属性**是读写对，显示为读取侧 `Sprite#bitmap`，下一行给出写入侧 `Sprite#bitmap = value`。
   两条共用同一条 IR 记录。
 - **类型**直接标在参数名后，例如 `Bitmap#blt(x: Integer, y: Integer, src_bitmap: Bitmap, src_rect: Rect, opacity: Integer = 255, blend_type: Integer = 0)`。
@@ -151,3 +167,13 @@ python bind/generate_binding.py    # 重新生成胶水（可选，viewer 不依
 ```
 
 查看器**只读** IR，从不改写 `core/`、`api_reference.json` 或任何生成物。
+
+## 回归测试
+
+无需启动引擎或访问网络；Python 测试覆盖 CLI 查询，Node 测试直接运行 HTML 的脚本，
+用轻量 DOM 替身验证常量展示、搜索、高亮、深链接、HTML 转义及旧 IR 兼容性：
+
+```bash
+python -I tools/tests/test_api_viewer.py
+node --test tools/tests/test_api_viewer.js
+```

@@ -28,7 +28,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// WebSocket  (core/network/network.h:78-112)
+// WebSocket  (core/network/network.h:75-108)
 // -------------------------------------------------------------------------
 
 RB_DEF_TYPE(WebSocket);
@@ -145,7 +145,7 @@ RB_FUNC(WebSocket_GetDropped) {
   return LONG2NUM(result);
 }
 
-RB_FUNC(WebSocket_SendText) {
+RB_FUNC(WebSocket_Send) {
   auto* self_obj = GetSelfData<urge::WebSocket>(self);
 
   CheckArgc(argc, 1);
@@ -156,24 +156,7 @@ RB_FUNC(WebSocket_SendText) {
   CheckString(data_val, &data_data, &data_size);
 
   {
-    self_obj->SendText(std::string(data_data, data_size));
-  }
-
-  return Qnil;
-}
-
-RB_FUNC(WebSocket_SendBinary) {
-  auto* self_obj = GetSelfData<urge::WebSocket>(self);
-
-  CheckArgc(argc, 1);
-  VALUE data_val;
-  const char* data_data;
-  size_t data_size;
-  ParseArgs(argc, argv, "o", &data_val);
-  CheckString(data_val, &data_data, &data_size);
-
-  {
-    self_obj->SendBinary(std::string(data_data, data_size));
+    self_obj->Send(std::string(data_data, data_size));
   }
 
   return Qnil;
@@ -289,8 +272,7 @@ void InitWebSocketBinding() {
   DefineMethod(klass, "ready_state", WebSocket_GetReadyState);
   DefineMethod(klass, "error", WebSocket_GetError);
   DefineMethod(klass, "dropped", WebSocket_GetDropped);
-  DefineMethod(klass, "send_text", WebSocket_SendText);
-  DefineMethod(klass, "send_binary", WebSocket_SendBinary);
+  DefineMethod(klass, "send", WebSocket_Send);
   DefineMethod(klass, "send_ping", WebSocket_SendPing);
   DefineMethod(klass, "close", WebSocket_Close);
   DefineMethod(klass, "next_event", WebSocket_NextEvent);

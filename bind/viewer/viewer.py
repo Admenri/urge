@@ -25,6 +25,7 @@ Target syntax
     Sprite.bitmap       a class method or class attribute
     Sprite#bitmap=      a writer (``#`` for instance, ``.`` for class side)
     Input.press?        module functions are class-side by the same rule
+    Input::DOWN         a class or module constant
 
 Exit status is 0 on success, 1 when the target is unknown, and 2 on a usage
 error, so ``search`` can be wired into other scripts.
@@ -48,6 +49,7 @@ EMBED_PATH = VIEWER_DIR / "api_embed.js"
 
 # Sides of the API surface, in the order a reader usually wants them.
 KIND_LABELS = {
+    "constant": "constant",
     "new": "constructor",
     "index": "index operator",
     "instance": "instance method",
@@ -62,13 +64,14 @@ KIND_LABELS = {
     "unsupported": "unsupported",
 }
 
-# Kinds reachable with a ``.`` receiver rather than ``#``.
+# Class-side members use ``.``, except constant lookup which uses ``::``.
 CLASS_SIDE_KINDS = frozenset(
-    ("new", "class", "class_attribute", "module_function", "module_attribute", "marshal")
+    ("constant", "new", "class", "class_attribute", "module_function", "module_attribute", "marshal")
 )
 
 # The order the detail pane renders sections in.
 SECTION_ORDER = [
+    "constant",
     "new",
     "index",
     "instance",
@@ -231,10 +234,10 @@ def _member(
     export: str = "",
     note: str = "",
 ) -> dict:
-    """One callable/attribute, flattened into the shape the viewer renders."""
+    """One API member, flattened into the shape the viewer renders."""
     owner = entry["name"]
     class_side = kind in CLASS_SIDE_KINDS
-    separator = "." if class_side else "#"
+    separator = "::" if kind == "constant" else "." if class_side else "#"
     # ``setter`` arrives as ``bitmap=``; the idiomatic Ruby spelling puts spaces
     # around the ``=``, so drop the trailing one before rebuilding the call.
     setter_name = setter[:-1] if setter and setter.endswith("=") else setter
@@ -266,6 +269,8 @@ def _method_member(entry: dict, method: dict, kind: str) -> dict:
         flags.append("annotation")
     if method.get("override"):
         flags.append("override")
+    if method.get("binary"):
+        flags.append("binary")
     return _member(
         entry,
         kind,
@@ -275,6 +280,7 @@ def _method_member(entry: dict, method: dict, kind: str) -> dict:
         returns=method.get("return"),
         flags=flags,
         export=method.get("export", ""),
+        note="returns raw ASCII-8BIT bytes; no decoding" if method.get("binary") else "",
     )
 
 
@@ -305,6 +311,19 @@ def _attr_member(entry: dict, attr: dict, kind: str, ruby_type: str = "") -> dic
 def iter_members(entry: dict) -> list[dict]:
     """Every member the IR says this class/module exposes, in rendering order."""
     found: list[dict] = []
+
+    for constant in entry.get("constants", []):
+        member = _member(
+            entry,
+            "constant",
+            constant["name"],
+            cpp_name=constant.get("cpp_name", ""),
+            # Exported enums and constexpr constants are integral in the IR.
+            returns={"ruby_type": "Integer"},
+            note=constant.get("doc") or constant.get("description") or "",
+        )
+        member["value"] = constant.get("value")
+        found.append(member)
 
     if entry.get("kind") == "module":
         # Modules store ATTR() as a *pair* of flat functions rather than the
@@ -443,7 +462,7 @@ def iter_members(entry: dict) -> list[dict]:
 
 # Kinds whose Ruby spelling carries no argument list.
 _BARE_KINDS = frozenset(
-    ("attribute", "data_attribute", "class_attribute", "module_attribute")
+    ("constant", "attribute", "data_attribute", "class_attribute", "module_attribute")
 )
 
 
@@ -462,6 +481,12 @@ def format_writer(member: dict) -> str | None:
     return "%s: %s" % (writer, return_type(member)) if writer else None
 
 
+def constant_value(member: dict) -> str:
+    """Keep C++ initializers as source text, never evaluate or guess values."""
+    value = member.get("value")
+    return str(value) if value is not None else "implicit (see C++ member)"
+
+
 def format_returns(member: dict) -> str:
     cpp = (member.get("return") or {}).get("cpp_type")
     ruby = return_type(member)
@@ -473,7 +498,7 @@ def format_returns(member: dict) -> str:
 # --------------------------------------------------------------------------- #
 
 
-TARGET_RE = re.compile(r"^(?P<owner>[A-Za-z_][\w]*)(?:(?P<sep>[#.])(?P<member>[^\s]+))?$")
+TARGET_RE = re.compile(r"^(?P<owner>[A-Za-z_][\w]*)(?:(?P<sep>::|[#.])(?P<member>[^\s]+))?$")
 
 
 def resolve(ir: dict, target: str) -> tuple[dict, dict | None]:
@@ -489,8 +514,10 @@ def resolve(ir: dict, target: str) -> tuple[dict, dict | None]:
     if member_name is None:
         return entry, None
 
+    want_constant = match.group("sep") == "::"
     want_class_side = match.group("sep") == "."
-    found = [m for m in iter_members(entry) if m["kind"] != "unsupported"]
+    found = [m for m in iter_members(entry)
+             if m["kind"] != "unsupported" and (m["kind"] == "constant") == want_constant]
 
     # 1. Exact name first: ``[]=`` and ``bitmap=`` are literal Ruby names, so a
     #    trailing ``=`` must not be mistaken for a suffix before this is tried.
@@ -503,7 +530,7 @@ def resolve(ir: dict, target: str) -> tuple[dict, dict | None]:
 
     # 2. ``Sprite#bitmap=`` names the writer of the ATTR() whose reader is
     #    ``bitmap``; both live on one record, so hand back the record itself.
-    if member_name.endswith("="):
+    if not want_constant and member_name.endswith("="):
         bare = member_name[:-1]
         for member in found:
             if member["ruby_name"] == bare and member["class_side"] == want_class_side:
@@ -535,6 +562,8 @@ def search(ir: dict, query: str, limit: int = 40) -> list[dict]:
                 return_type(member),
                 returns.get("cpp_type") or "",
                 " ".join(p.get("type", "") for p in member["params"]),
+                constant_value(member) if member["kind"] == "constant" else "",
+                member["note"],
             )).lower()
             name = member["ruby_name"].lower()
             call = member["call"].lower()
@@ -590,12 +619,15 @@ def render_owner(entry: dict) -> str:
     # stated once above rather than repeated on each row.
     signatures = [format_signature(member) for member in members]
     width = max([46] + [len(signature) for signature in signatures])
-    lines.append("%-16s %-*s %s" % ("KIND", width, "SIGNATURE", "RETURNS"))
+    lines.append("%-16s %-*s %s" % ("KIND", width, "SIGNATURE", "TYPE / VALUE"))
     lines.append("-" * (width + 46))
     for member, signature in zip(members, signatures):
+        detail = format_returns(member)
+        if member["kind"] == "constant":
+            detail += "; initializer: " + constant_value(member)
         lines.append(
             "%-16s %-*s %s"
-            % (member["kind_label"], width, signature, format_returns(member))
+            % (member["kind_label"], width, signature, detail)
         )
     lines.append("")
     lines.append("%d members (%d exported, %d skipped)"
@@ -613,7 +645,12 @@ def render_member(entry: dict, member: dict) -> str:
     lines.append("owner     %s %s" % (entry.get("kind", "class"), entry["name"]))
     if member["cpp_name"]:
         lines.append("C++       %s" % member["cpp_name"])
-    lines.append("returns   %s" % format_returns(member))
+    if member["kind"] == "constant":
+        lines.append("type      %s" % format_returns(member))
+        lines.append("value     %s" % constant_value(member))
+        lines.append("          C++ initializer text; evaluated by the compiler, not the viewer")
+    else:
+        lines.append("returns   %s" % format_returns(member))
     if member["params"]:
         lines.append("params")
         for param in member["params"]:
@@ -624,7 +661,9 @@ def render_member(entry: dict, member: dict) -> str:
         lines.append("flags     %s" % ", ".join(member["flags"]))
     if member["cpp_type"]:
         lines.append("C++ type  %s" % member["cpp_type"])
-    if member["class_side"] and member["kind"] != "unsupported":
+    if member["kind"] == "constant":
+        lines.append("receiver  constant lookup (::)")
+    elif member["class_side"] and member["kind"] != "unsupported":
         lines.append("receiver  class side (a . call)")
     if member["export"]:
         lines.append("source    %s" % member["export"])
@@ -752,7 +791,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     ir = load_ir(args.ir)
     entry, member = resolve(ir, args.target)
     if member is None:
-        if "#" in args.target or "." in args.target:
+        if "#" in args.target or "." in args.target or "::" in args.target:
             print("no member matched %r; members of %s:" % (args.target, entry["name"]))
             print(render_owner(entry))
             return 1
@@ -782,6 +821,8 @@ def cmd_search(args: argparse.Namespace) -> int:
         return 1
     for member in hits:
         signature = "%s -> %s" % (format_signature(member), return_type(member))
+        if member["kind"] == "constant":
+            signature += "; initializer: " + constant_value(member)
         print("%-40s %-14s %s" % (signature, member["kind_label"], member["export"]))
     print()
     print("%d match(es)" % len(hits))
@@ -860,7 +901,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_list.set_defaults(func=cmd_list)
 
     p_show = sub.add_parser("show", help="show a class, module or member")
-    p_show.add_argument("target", metavar="TARGET", help="e.g. Sprite or Sprite#bitmap")
+    p_show.add_argument("target", metavar="TARGET", help="e.g. Sprite, Sprite#bitmap or Input::DOWN")
     p_show.add_argument("--json", action="store_true")
     p_show.set_defaults(func=cmd_show)
 

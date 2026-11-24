@@ -132,7 +132,12 @@
   .api-table th:nth-child(1) { width: 64%; }
   .api-table th:nth-child(2) { width: 22%; }
   .api-table th:nth-child(3) { width: 14%; }
-  .api-table td { overflow-wrap: anywhere; }
+  .api-table td, .constants-table td { overflow-wrap: anywhere; }
+  .constants-table { table-layout: fixed; }
+  .constants-table th:nth-child(1) { width: 35%; }
+  .constants-table th:nth-child(2) { width: 10%; }
+  .constants-table th:nth-child(3) { width: 40%; }
+  .constants-table th:nth-child(4) { width: 15%; }
   td.sig { font-family: var(--mono); font-size: 12.5px; }
   .sig .nm { font-weight: 600; }
   .sig .pa { color: var(--muted); }
@@ -183,7 +188,7 @@
   </div>
   <div class="grow"></div>
   <div class="searchbox">
-    <input id="q" type="search" placeholder="Search the API &mdash; e.g. bitmap, press?" autocomplete="off" spellcheck="false">
+    <input id="q" type="search" placeholder="Search the API &mdash; e.g. bitmap, Input::DOWN" autocomplete="off" spellcheck="false">
     <div id="suggest"></div>
   </div>
   <button id="reload" class="reload" type="button" title="Fetch the API JSON again">Reload</button>
@@ -302,6 +307,7 @@ async function loadIR() {
  * ------------------------------------------------------------------ */
 
 var KIND_LABELS = {
+  "constant": "constant",
   "new": "constructor",
   "index": "index operator",
   "instance": "instance method",
@@ -316,13 +322,13 @@ var KIND_LABELS = {
   "unsupported": "unsupported"
 };
 
-/* Kinds reachable with a `.` receiver rather than `#`. */
-var CLASS_SIDE_KINDS = ["new", "class", "class_attribute", "module_function", "module_attribute", "marshal"];
+/* Class-side members use `.`, except constant lookup which uses `::`. */
+var CLASS_SIDE_KINDS = ["constant", "new", "class", "class_attribute", "module_function", "module_attribute", "marshal"];
 
 /* Kinds whose Ruby spelling carries no argument list. */
-var BARE_KINDS = ["attribute", "data_attribute", "class_attribute", "module_attribute"];
+var BARE_KINDS = ["constant", "attribute", "data_attribute", "class_attribute", "module_attribute"];
 
-var SECTION_ORDER = ["new", "index", "instance", "attribute", "data_attribute",
+var SECTION_ORDER = ["constant", "new", "index", "instance", "attribute", "data_attribute",
                      "class", "class_attribute", "module_function", "module_attribute",
                      "marshal", "initialize_copy", "unsupported"];
 
@@ -387,7 +393,7 @@ function paramsText(ps, typed) {
 function mkMember(owner, kind, rubyName, o) {
   o = o || {};
   var classSide = CLASS_SIDE_KINDS.indexOf(kind) >= 0;
-  var sep = classSide ? "." : "#";
+  var sep = kind === "constant" ? "::" : classSide ? "." : "#";
   var setter = o.setter || null;
   var setterName = setter && setter.slice(-1) === "=" ? setter.slice(0, -1) : setter;
   return {
@@ -413,6 +419,15 @@ function mkMember(owner, kind, rubyName, o) {
 function membersOf(entry) {
   var out = [];
 
+  (entry.constants || []).forEach(function (c) {
+    var m = mkMember(entry, "constant", c.name, {
+      cppName: c.cpp_name, ret: { ruby_type: "Integer" },
+      note: c.doc || c.description || ""
+    });
+    m.value = c.value;
+    out.push(m);
+  });
+
   if (entry.kind === "module") {
     /* Modules store ATTR() as a pair of flat functions rather than the nested
      * attributes list classes use: the reader carries `attr`, the writer also
@@ -432,8 +447,10 @@ function membersOf(entry) {
       } else {
         var flags = [];
         if (f.header_annotation) flags.push("annotation");
+        if (f.binary) flags.push("binary");
         out.push(mkMember(entry, "module_function", f.ruby_name, {
-          cppName: f.cpp_name, params: f.params, ret: f["return"], flags: flags, export: f.export
+          cppName: f.cpp_name, params: f.params, ret: f["return"], flags: flags, export: f.export,
+          note: f.binary ? "returns raw ASCII-8BIT bytes; no decoding" : ""
         }));
       }
     });
@@ -471,8 +488,10 @@ function membersOf(entry) {
       var flags = [];
       if (m.header_annotation) flags.push("annotation");
       if (m.override) flags.push("override");
+      if (m.binary) flags.push("binary");
       out.push(mkMember(entry, kind, m.ruby_name, {
-        cppName: m.cpp_name, params: m.params, ret: m["return"], flags: flags, export: m.export
+        cppName: m.cpp_name, params: m.params, ret: m["return"], flags: flags, export: m.export,
+        note: m.binary ? "returns raw ASCII-8BIT bytes; no decoding" : ""
       }));
     });
   }
@@ -545,6 +564,10 @@ function signatureOf(m, typed) {
   if (m.kind === "unsupported") return m.rubyName;
   if (BARE_KINDS.indexOf(m.kind) >= 0) return m.call;
   return m.call + "(" + paramsText(m.params, typed) + ")";
+}
+
+function constantValue(m) {
+  return m.value === null || m.value === undefined ? "implicit (see C++ member)" : String(m.value);
 }
 
 /* ------------------------------------------------------------------ *
@@ -653,7 +676,7 @@ function renderOverview() {
   var html = "";
   html += '<h2 class="title">Binding reference</h2>';
   html += '<div class="hint">Generated from the <code>/*-export.begin-*/</code> blocks of <code>core/*.h</code>. ' +
-          "Pick a class on the left, or search for a method name above.</div>";
+          "Pick a class or module on the left, or search for a method or constant above.</div>";
 
   html += '<div class="badges">';
   html += '<span class="badge k">' + STATE.source + " data</span>";
@@ -714,6 +737,24 @@ function returnsHTML(m) {
          (cpp ? '<div class="native-type">C++: ' + esc(cpp) + "</div>" : "");
 }
 
+function constantsHTML(constants, highlight) {
+  if (!constants.length) return "";
+  var html = sectionTitle("constant", constants.length);
+  html += '<p class="hint signature-hint">Values are C++ initializer text, not evaluated by this viewer. ' +
+          'Implicit enum values are not guessed; the Ruby constants are <code>Integer</code>.</p>';
+  html += '<table class="constants-table"><thead><tr><th>Name</th><th>Type</th><th>Value / C++ initializer</th><th>C++ member</th></tr></thead><tbody>';
+  constants.forEach(function (m) {
+    var isHit = highlight && m.rubyName === highlight;
+    html += '<tr' + (isHit ? ' class="flag"' : "") + '><td class="sig copy" title="click to copy" data-sig="' +
+            esc(m.call) + '">' + signatureHTML(m) +
+            (m.note ? '<div class="hint" style="font-size:11.5px">' + esc(m.note) + '</div>' : '') + '</td>' +
+            '<td class="ret">' + returnsHTML(m) + '</td>' +
+            '<td class="mono">' + esc(constantValue(m)) + '</td>' +
+            '<td class="cpp">' + esc(m.cppName || "—") + '</td></tr>';
+  });
+  return html + '</tbody></table></section>';
+}
+
 function renderDetail(name, highlight) {
   var entry = ownerOf(name);
   if (!entry) return;
@@ -753,7 +794,9 @@ function renderDetail(name, highlight) {
           'Hover over a parameter type for C++; click a signature to copy it without type annotations. ' +
           '<code>Type | nil</code> means the value may be <code>nil</code>.</p>';
 
-  var order = SECTION_ORDER.filter(function (k) { return k !== "unsupported"; });
+  html += constantsHTML(live.filter(function (m) { return m.kind === "constant"; }), highlight);
+
+  var order = SECTION_ORDER.filter(function (k) { return k !== "constant" && k !== "unsupported"; });
   if (entry.kind === "module") order = ["module_function", "module_attribute"];
 
   order.forEach(function (kind) {
@@ -840,7 +883,8 @@ function rank(m, needle) {
   if (call.indexOf(needle) >= 0) return 2;
   var hay = (signatureOf(m, true) + " " + m.cppName + " " + returnType(m) + " " +
              ((m.ret && m.ret.cpp_type) || "") + " " +
-             m.params.map(function (p) { return p.type || ""; }).join(" ")).toLowerCase();
+             m.params.map(function (p) { return p.type || ""; }).join(" ") + " " +
+             (m.kind === "constant" ? constantValue(m) : "") + " " + m.note).toLowerCase();
   if ((m.owner + " " + hay).toLowerCase().indexOf(needle) >= 0) return 3;
   return -1;
 }
@@ -868,7 +912,8 @@ function renderSuggest(hits, query) {
   suggestEl.innerHTML = hits.map(function (m) {
     return '<div class="item" data-owner="' + esc(m.owner) + '" data-name="' + esc(m.rubyName) + '">' +
            '<span class="sig">' + signatureHTML(m) + '<span class="pa"> → </span>' +
-           '<span class="type">' + esc(returnType(m)) + "</span></span>" +
+           '<span class="type">' + esc(returnType(m)) + '</span>' +
+           (m.kind === "constant" ? '<span class="pa"> = ' + esc(constantValue(m)) + '</span>' : '') + '</span>' +
            '<span class="kind">' + esc(m.kindLabel) + "</span></div>";
   }).join("");
   suggestEl.classList.add("open");
@@ -981,10 +1026,10 @@ async function boot() {
   var seconds = Number(viewerConfig().refreshSeconds || 0);
   if (seconds > 0) setInterval(refresh, Math.max(seconds, 5) * 1000);
 
-  // Deep link: #Sprite#bitmap
+  // Deep links: #Sprite#bitmap, #Input::DOWN
   var hash = decodeURIComponent(location.hash.replace(/^#/, ""));
   if (hash) {
-    var m = hash.match(/^([A-Za-z_][\w]*)(?:[#.](.+))?$/);
+    var m = hash.match(/^([A-Za-z_][\w]*)(?:(?:::|[#.])(.+))?$/);
     if (m && ownerOf(m[1])) select(m[1], m[2] || null);
   }
 }

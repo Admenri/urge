@@ -44,8 +44,7 @@ class WebSocketImpl {
   virtual RefPtr<NetworkEvent> NextEvent() = 0;
   virtual int32_t Pending() = 0;
 
-  virtual void SendText(const std::string& data) = 0;
-  virtual void SendBinary(const std::string& data) = 0;
+  virtual void Send(const std::string& data) = 0;
   virtual void SendPing(const std::string& data) = 0;
   virtual void Close(int32_t code, const std::string& reason) = 0;
 

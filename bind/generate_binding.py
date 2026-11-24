@@ -14,7 +14,9 @@ never touched.
 
 Generation is idempotent: every `.cc` is split into GENERATED blocks, which are
 rewritten on each run, and HANDWRITTEN blocks, which are preserved verbatim.
-Delete a file to have it recreated from the template.
+The sole narrow migration retires known old network binary getter helpers once
+the IR exports their generated replacements; customized helpers require manual
+migration instead of being discarded. Delete a file to recreate the template.
 
 Usage:
     python bind/generate_binding.py [ir.json] [output_dir]
@@ -326,39 +328,6 @@ void DefineVideoPlayerInfo(VALUE klass) {
 }
 """
 
-NETWORK_EVENT_MANUAL = """\
-// `NetworkEvent#data` answers a Ruby String tagged ASCII-8BIT: the payload is
-// raw bytes and the generated `s` codec would tag it UTF-8.  The C++ accessor
-// therefore carries no `URGE_BINDING()` marker.
-RB_FUNC(NetworkEvent_Data) {
-  auto* self_obj = GetSelfData<urge::NetworkEvent>(self);
-
-  const std::string& data = self_obj->data();
-  return rb_enc_str_new(data.data(), static_cast<long>(data.size()),
-                        rb_ascii8bit_encoding());
-}
-
-void DefineNetworkEventData(VALUE klass) {
-  DefineMethod(klass, "data", NetworkEvent_Data);
-}
-"""
-
-FETCH_MANUAL = """\
-// `Fetch#body` answers ASCII-8BIT bytes, for the same reason as
-// `NetworkEvent#data`.
-RB_FUNC(Fetch_Body) {
-  auto* self_obj = GetSelfData<urge::Fetch>(self);
-
-  const std::string& body = self_obj->body();
-  return rb_enc_str_new(body.data(), static_cast<long>(body.size()),
-                        rb_ascii8bit_encoding());
-}
-
-void DefineFetchBody(VALUE klass) {
-  DefineMethod(klass, "body", Fetch_Body);
-}
-"""
-
 GAMEPAD_MANUAL = """\
 namespace {
 
@@ -402,16 +371,12 @@ HANDWRITTEN_SEED = {
     "binding_table.cc": TABLE_MANUAL,
     "binding_gamepad.cc": GAMEPAD_MANUAL,
     "binding_video.cc": VIDEO_MANUAL,
-    "binding_network_event.cc": NETWORK_EVENT_MANUAL,
-    "binding_fetch.cc": FETCH_MANUAL,
 }
 
 # Statements appended to the generated Init*Binding() body.
 EXTRA_INIT_CALLS = {
     "Gamepad": ['DefineClassMethod(klass, "available_devices", Gamepad_available_devices);'],
     "Video": ["DefineVideoPlayerInfo(klass);"],
-    "NetworkEvent": ["DefineNetworkEventData(klass);"],
-    "Fetch": ["DefineFetchBody(klass);"],
 }
 
 # Statements appended to the global InitBindings(), after every per-entry
@@ -1617,6 +1582,104 @@ def read_text(path: str) -> str:
         return f.read().replace("\r\n", "\n")
 
 
+# These retired helpers are migration fingerprints, never seeds for new files.
+# Keep the scope narrower than "a HANDWRITTEN block in a network file": both
+# the IR's new binary getter and the exact known old function bodies must match.
+LEGACY_NETWORK_GETTERS = {
+    "NetworkEvent": ("data", "GetData", "NetworkEvent_Data", "DefineNetworkEventData", (
+        "// `NetworkEvent#data` answers a Ruby String tagged ASCII-8BIT: the payload is\n"
+        "// raw bytes and the generated `s` codec would tag it UTF-8.  The C++ accessor\n"
+        "// therefore carries no `URGE_BINDING()` marker.",
+        "// `data()` answers a `const std::string&` the object owns, so phase 2 can hand\n"
+        "// back a pointer and a length without copying or owning anything.",
+    )),
+    "Fetch": ("body", "GetBody", "Fetch_Body", "DefineFetchBody", (
+        "// `Fetch#body` answers ASCII-8BIT bytes, for the same reason as\n"
+        "// `NetworkEvent#data`.",
+        "// Same shape as NetworkEvent#data: the body belongs to the Fetch object, so\n"
+        "// phase 2 only reads a pointer and a length out of it.",
+    )),
+}
+
+
+def migrate_network_getter(entry: dict, path: str, handwritten: str,
+                           handwritten_init: str) -> tuple[str, str]:
+    """Retire only known pre-Binary getter glue, preserving unrelated patches.
+
+    Unknown edits to a retired helper are an error, not permission to erase
+    user code or leave an unbuildable call to data()/body() behind. No file is
+    written on this error; the user can move their patch onto the new getter.
+    """
+    owner = entry["cpp_name"]
+    migration = LEGACY_NETWORK_GETTERS.get(owner)
+    if (not migration or entry.get("header") != "core/network/network.h"
+            or os.path.basename(path) != "binding_%s.cc" % snake(owner)):
+        return handwritten, handwritten_init
+    member, getter, symbol, helper, comments = migration
+    if not any(method["cpp_name"] == getter and method["ruby_name"] == member
+               and method.get("binary") and not method["params"]
+               and method["return"]["cpp_type"] == "std::string"
+               for method in entry.get("instance_methods", [])):
+        return handwritten, handwritten_init
+
+    def tokens(code: str) -> tuple[str, ...]:
+        # Ignore layout, not whitespace inside literals or between identifiers.
+        # A custom registration named " data " must not match the old "data".
+        return tuple(re.findall(r'"(?:\\.|[^"\\])*"|\w+|[^\s]', code))
+
+    self_line = "auto* self_obj = GetSelfData<urge::%s>(self);" % owner
+    direct = (
+        "const std::string& %s = self_obj->%s();"
+        "return rb_enc_str_new(%s.data(), static_cast<long>(%s.size()),"
+        "rb_ascii8bit_encoding());" % (member, member, member, member)
+    )
+    borrowed = (
+        "const char* %s = nullptr; size_t size = 0; {"
+        "const std::string& payload = self_obj->%s();"
+        "%s = payload.data(); size = payload.size(); }"
+        "return rb_enc_str_new(%s, static_cast<long>(size),"
+        "rb_ascii8bit_encoding());" % (member, member, member, member)
+    )
+    getters = {tokens("RB_FUNC(%s) { %s %s %s }" % (symbol, self_line, check, body))
+               for body in (direct, borrowed) for check in ("", "CheckArgc(argc, 0);")}
+    registration = 'DefineMethod(klass, "%s", %s);' % (member, symbol)
+    known_helper = tokens("void %s(VALUE klass) { %s }" % (helper, registration))
+    patterns = (
+        (r"^(?P<indent>[ \t]*)RB_FUNC\s*\(\s*%s\s*\)\s*\{.*?^(?P=indent)\}" % symbol,
+         getters, comments),
+        (r"^(?P<indent>[ \t]*)void\s+%s\s*\(\s*VALUE\s+klass\s*\)\s*\{.*?^(?P=indent)\}" % helper,
+         {known_helper}, ()),
+    )
+
+    def migrate(block: str) -> str:
+        for pattern, known, prefixes in patterns:
+            matches = list(re.finditer(pattern, block, re.M | re.S))
+            for match in reversed(matches):
+                if tokens(match.group()) not in known:
+                    raise ValueError("%s: customized legacy helper %s; migrate it manually"
+                                     % (path, symbol))
+                start = match.start()
+                for comment in prefixes:
+                    prefix = comment + "\n"
+                    if block[:start].endswith(prefix):
+                        start -= len(prefix)
+                        break
+                block = block[:start] + block[match.end():]
+        # Some old patches put the known registration in HANDWRITTEN INIT.
+        # Remove only the complete statements, never the surrounding function.
+        for statement in ("%s(klass);" % helper, registration):
+            pattern = r"^[ \t]*" + r"\s*".join(
+                re.escape(token) for token in tokens(statement)
+            ) + r"[ \t]*(?:\n|$)"
+            block = re.sub(pattern, "", block, flags=re.M)
+        if re.search(r"\b(?:%s|%s)\b" % (symbol, helper), block):
+            raise ValueError("%s: custom glue still names a retired network helper; "
+                             "migrate it manually" % path)
+        return block.strip("\n")
+
+    return migrate(handwritten), migrate(handwritten_init)
+
+
 def write_text(path: str, text: str) -> None:
     """Write `text` to `path`, but only if that would actually change it.
 
@@ -1661,6 +1724,9 @@ def generate_cc(model: Model, entry: dict, path: str) -> None:
         handwritten = HANDWRITTEN_SEED.get(file_name, "").strip("\n")
         handwritten_includes = ""
         handwritten_init = ""
+
+    handwritten, handwritten_init = migrate_network_getter(
+        entry, path, handwritten, handwritten_init)
 
     refs = model.references(entry)
     binding_headers = ["binding_%s.h" % snake(r) for r in refs]

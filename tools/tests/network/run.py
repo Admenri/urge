@@ -23,6 +23,9 @@ import time
 import zlib
 
 
+BINARY_PAYLOAD = bytes(range(256)) * 1024
+
+
 def frame(opcode: int, data: bytes, final: bool = True) -> bytes:
     size = len(data)
     header = bytes(((0x80 if final else 0) | opcode,))
@@ -48,10 +51,11 @@ class Fixture(BaseHTTPRequestHandler):
     def log_message(self, *_):
         pass
 
-    def respond(self, status: int, body: bytes, **headers):
+    def respond(self, status: int, body: bytes,
+                content_type: str = "text/plain; charset=utf-8", **headers):
         self.send_response(status, "Fixture Status" if status == 418 else None)
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Type", content_type)
         for key, value in headers.items():
             self.send_header(key.replace("_", "-"), value)
         self.end_headers()
@@ -86,6 +90,20 @@ class Fixture(BaseHTTPRequestHandler):
                 self.wfile.flush()
                 time.sleep(0.5)
                 self.wfile.write(b"done")
+            elif self.path in ("/binary", "/binary-status"):
+                self.respond(418 if self.path == "/binary-status" else 200,
+                             BINARY_PAYLOAD, content_type="application/octet-stream")
+            elif self.path == "/binary-chunked":
+                self.send_response(200)
+                self.send_header("Content-Type", "application/octet-stream")
+                self.send_header("Transfer-Encoding", "chunked")
+                self.end_headers()
+                for start in range(0, len(BINARY_PAYLOAD), 4093):
+                    chunk = BINARY_PAYLOAD[start:start + 4093]
+                    self.wfile.write(f"{len(chunk):x}\r\n".encode() + chunk + b"\r\n")
+                self.wfile.write(b"0\r\n\r\n")
+            elif self.path == "/empty":
+                self.respond(200, b"", content_type="application/octet-stream")
             elif self.path == "/status":
                 self.respond(418, b"teapot", X_Test="error-response")
             else:
@@ -110,14 +128,26 @@ class Fixture(BaseHTTPRequestHandler):
             self.send_header("Sec-WebSocket-Protocol", "urge-test")
         self.end_headers()
         self.connection.settimeout(10)
-        if self.path == "/fragments":
+        if self.path == "/mixed":
+            data = (chr(0xFEFF) + "echo\x00中文\x00").encode()
+            self.wfile.write(frame(1, data) + frame(2, data) + frame(1, b"") + frame(2, b""))
+            self.wfile.flush()
+        elif self.path == "/fragments":
             self.wfile.write(frame(1, b"fragment-", False) + frame(9, b"server-ping")
                              + frame(0, "中文".encode(), True))
+            self.wfile.flush()
+        elif self.path == "/binary-fragments":
+            self.wfile.write(frame(2, BINARY_PAYLOAD[:4093], False)
+                             + frame(9, b"server-ping")
+                             + frame(0, BINARY_PAYLOAD[4093:65537], False)
+                             + frame(0, BINARY_PAYLOAD[65537:], True))
             self.wfile.flush()
         elif self.path == "/burst":
             self.wfile.write(b"".join(frame(1, str(i).encode()) for i in range(12))
                              + frame(8, struct.pack("!H", 1000) + b"burst-end"))
             self.wfile.flush()
+        message_type = None
+        message = bytearray()
         while True:
             first, second = exact(self.rfile, 2)
             opcode, size = first & 15, second & 127
@@ -140,8 +170,26 @@ class Fixture(BaseHTTPRequestHandler):
                 self.wfile.write(frame(10, data) + frame(1, b"client-ping-seen"))
             elif opcode == 10:
                 self.wfile.write(frame(1, b"server-pong-seen"))
-            elif opcode in (1, 2):
-                self.wfile.write(frame(opcode, data))
+            elif opcode in (0, 1, 2):
+                # Browsers may fragment outgoing messages even when send() was
+                # called once. Echo the message, not its first wire fragment.
+                if opcode in (1, 2):
+                    if self.path == "/binary-only" and opcode != 2:
+                        self.wfile.write(frame(8, struct.pack("!H", 1003) + b"binary required"))
+                        self.wfile.flush()
+                        return
+                    if message_type is not None:
+                        raise ValueError("nested fixture message")
+                    message_type = opcode
+                elif message_type is None:
+                    raise ValueError("unexpected fixture continuation")
+                message.extend(data)
+                if len(message) > 2_000_000:
+                    raise ValueError("unexpected fixture message size")
+                if first & 128:
+                    self.wfile.write(frame(message_type, bytes(message)))
+                    message_type = None
+                    message.clear()
             self.wfile.flush()
 
 

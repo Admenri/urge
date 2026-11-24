@@ -3,7 +3,7 @@
     "title": "URGE Binding IR",
     "generator": "bind/gen_api_json.py",
     "rules": "bind/Bindgen.md",
-    "generated_at": "2026-11-22T04:55:31Z",
+    "generated_at": "2026-11-23T13:47:37Z",
     "source_headers": [
       "core/audio/audio.h",
       "core/audio/audio_service.h",
@@ -55,18 +55,6 @@
       "core/render/texture_format.h",
       "core/render/uniform.h",
       "core/render/wgsl_reflect.h",
-      "core/scene/camera.h",
-      "core/scene/drawable.h",
-      "core/scene/geometry.h",
-      "core/scene/node.h",
-      "core/scene/plane.h",
-      "core/scene/sprite.h",
-      "core/scene/sprite_batch.h",
-      "core/scene/tilemap_vx.h",
-      "core/scene/tilemap_xp.h",
-      "core/scene/viewport.h",
-      "core/scene/window_vx.h",
-      "core/scene/window_xp.h",
       "core/scene3d/animation3d.h",
       "core/scene3d/animation_stack3d.h",
       "core/scene3d/animation_state_machine3d.h",
@@ -89,6 +77,18 @@
       "core/scene3d/shader_lib3d.h",
       "core/scene3d/skeleton3d.h",
       "core/scene3d/world3d.h",
+      "core/scene/camera.h",
+      "core/scene/drawable.h",
+      "core/scene/geometry.h",
+      "core/scene/node.h",
+      "core/scene/plane.h",
+      "core/scene/sprite.h",
+      "core/scene/sprite_batch.h",
+      "core/scene/tilemap_vx.h",
+      "core/scene/tilemap_xp.h",
+      "core/scene/viewport.h",
+      "core/scene/window_vx.h",
+      "core/scene/window_xp.h",
       "core/system/archive.h",
       "core/system/config.h",
       "core/system/filesystem.h",
@@ -3480,7 +3480,7 @@
     {
       "constants": [],
       "unsupported": [],
-      "export": "core/network/network.h:185-205",
+      "export": "core/network/network.h:180-200",
       "cpp_name": "Network",
       "cpp_parent": "Singleton",
       "header": "core/network/network.h",
@@ -3498,7 +3498,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:185-205"
+          "export": "core/network/network.h:180-200"
         },
         {
           "ruby_name": "websocket",
@@ -3521,7 +3521,7 @@
           ],
           "has_exception": true,
           "header_annotation": true,
-          "export": "core/network/network.h:185-205"
+          "export": "core/network/network.h:180-200"
         },
         {
           "ruby_name": "fetch",
@@ -3554,7 +3554,7 @@
           ],
           "has_exception": true,
           "header_annotation": true,
-          "export": "core/network/network.h:185-205"
+          "export": "core/network/network.h:180-200"
         },
         {
           "ruby_name": "timeout",
@@ -3567,7 +3567,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:185-205"
+          "export": "core/network/network.h:180-200"
         },
         {
           "ruby_name": "timeout=",
@@ -3587,7 +3587,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:185-205"
+          "export": "core/network/network.h:180-200"
         },
         {
           "ruby_name": "max_events",
@@ -3600,7 +3600,7 @@
           "header_annotation": false,
           "attr": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:185-205"
+          "export": "core/network/network.h:180-200"
         },
         {
           "ruby_name": "max_events=",
@@ -3620,7 +3620,7 @@
           "attr": true,
           "setter": true,
           "attr_value_type": "int32_t",
-          "export": "core/network/network.h:185-205"
+          "export": "core/network/network.h:180-200"
         }
       ]
     },
@@ -19492,8 +19492,8 @@
           "export": "core/network/network.h:41-64"
         },
         {
-          "ruby_name": "text",
-          "cpp_name": "GetText",
+          "ruby_name": "data",
+          "cpp_name": "GetData",
           "return": {
             "cpp_type": "std::string",
             "ruby_type": "String"
@@ -19501,7 +19501,8 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:41-64"
+          "export": "core/network/network.h:41-64",
+          "binary": true
         },
         {
           "ruby_name": "code",
@@ -19551,24 +19552,19 @@
           "value": "0"
         },
         {
-          "name": "TEXT",
-          "cpp_name": "Text",
+          "name": "MESSAGE",
+          "cpp_name": "Message",
           "value": "1"
-        },
-        {
-          "name": "BINARY",
-          "cpp_name": "Binary",
-          "value": "2"
         },
         {
           "name": "CLOSE",
           "cpp_name": "Close",
-          "value": "3"
+          "value": "2"
         },
         {
           "name": "ERROR",
           "cpp_name": "Error",
-          "value": "4"
+          "value": "3"
         }
       ],
       "marshal": {
@@ -19603,7 +19599,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         }
       ],
       "initialize_copy": null,
@@ -19618,7 +19614,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         },
         {
           "ruby_name": "ready_state",
@@ -19630,7 +19626,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         },
         {
           "ruby_name": "error",
@@ -19642,7 +19638,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         },
         {
           "ruby_name": "dropped",
@@ -19654,11 +19650,11 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         },
         {
-          "ruby_name": "send_text",
-          "cpp_name": "SendText",
+          "ruby_name": "send",
+          "cpp_name": "Send",
           "return": {
             "cpp_type": "void",
             "ruby_type": "nil"
@@ -19672,25 +19668,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:78-112"
-        },
-        {
-          "ruby_name": "send_binary",
-          "cpp_name": "SendBinary",
-          "return": {
-            "cpp_type": "void",
-            "ruby_type": "nil"
-          },
-          "params": [
-            {
-              "name": "data",
-              "type": "std::string",
-              "default": null
-            }
-          ],
-          "has_exception": false,
-          "header_annotation": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         },
         {
           "ruby_name": "send_ping",
@@ -19708,7 +19686,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         },
         {
           "ruby_name": "close",
@@ -19731,7 +19709,7 @@
           ],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         },
         {
           "ruby_name": "next_event",
@@ -19743,7 +19721,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         },
         {
           "ruby_name": "pending",
@@ -19755,7 +19733,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:78-112"
+          "export": "core/network/network.h:75-108"
         }
       ],
       "attributes": [],
@@ -19791,7 +19769,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/network/network.h:78-112",
+      "export": "core/network/network.h:75-108",
       "cpp_name": "WebSocket",
       "cpp_parent": "Object",
       "header": "core/network/network.h",
@@ -19826,7 +19804,7 @@
             }
           ],
           "has_exception": false,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         }
       ],
       "initialize_copy": null,
@@ -19841,7 +19819,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         },
         {
           "ruby_name": "abort",
@@ -19853,7 +19831,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": false,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         },
         {
           "ruby_name": "done?",
@@ -19865,7 +19843,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         },
         {
           "ruby_name": "success?",
@@ -19877,7 +19855,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         },
         {
           "ruby_name": "status",
@@ -19889,7 +19867,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         },
         {
           "ruby_name": "status_text",
@@ -19901,11 +19879,11 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         },
         {
-          "ruby_name": "text",
-          "cpp_name": "GetText",
+          "ruby_name": "body",
+          "cpp_name": "GetBody",
           "return": {
             "cpp_type": "std::string",
             "ruby_type": "String"
@@ -19913,7 +19891,8 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157",
+          "binary": true
         },
         {
           "ruby_name": "error",
@@ -19925,7 +19904,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         },
         {
           "ruby_name": "progress",
@@ -19937,7 +19916,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         },
         {
           "ruby_name": "header",
@@ -19955,7 +19934,7 @@
           ],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         },
         {
           "ruby_name": "headers",
@@ -19967,7 +19946,7 @@
           "params": [],
           "has_exception": false,
           "header_annotation": true,
-          "export": "core/network/network.h:128-160"
+          "export": "core/network/network.h:124-157"
         }
       ],
       "attributes": [],
@@ -19982,7 +19961,7 @@
       "equal": false,
       "index": null,
       "unsupported": [],
-      "export": "core/network/network.h:128-160",
+      "export": "core/network/network.h:124-157",
       "cpp_name": "Fetch",
       "cpp_parent": "Object",
       "header": "core/network/network.h",

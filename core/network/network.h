@@ -43,10 +43,9 @@ class NetworkEvent : public Object {
   URGE_BINDING()
   enum Type {
     Open = 0,
-    Text = 1,
-    Binary = 2,
-    Close = 3,
-    Error = 4,
+    Message = 1,
+    Close = 2,
+    Error = 3,
   };
 
   URGE_BINDING()
@@ -55,8 +54,9 @@ class NetworkEvent : public Object {
 
   URGE_BINDING(Name : "type")
   int32_t GetType();
-  URGE_BINDING(Name : "text")
-  std::string GetText();
+  // Message payloads are always raw bytes, regardless of the wire frame type.
+  URGE_BINDING(Name : "data", Binary : true)
+  std::string GetData();
   URGE_BINDING(Name : "code")
   int32_t GetCode();
   URGE_BINDING(Name : "reason")
@@ -64,11 +64,8 @@ class NetworkEvent : public Object {
   URGE_BINDING(Name : "message")
   std::string GetErrorMessage();
 
-  const std::string& data() const { return data_; }
-
   int32_t type_ = Open;
   std::string data_;
-  std::string text_;
   int32_t code_ = 0;
   std::string reason_;
   std::string message_;
@@ -98,10 +95,9 @@ class WebSocket : public Object {
   URGE_BINDING(Name : "dropped")
   int32_t GetDropped();
 
+  // Always sends a binary WebSocket message; no encoding conversion is done.
   URGE_BINDING()
-  void SendText(std::string data);
-  URGE_BINDING()
-  void SendBinary(std::string data);
+  void Send(std::string data);
   URGE_BINDING()
   void SendPing(std::string data = "");
   URGE_BINDING()
@@ -148,8 +144,9 @@ class Fetch : public Object {
   int32_t GetStatus();
   URGE_BINDING(Name : "status_text")
   std::string GetStatusText();
-  URGE_BINDING(Name : "text")
-  std::string GetText();
+  // HTTP response bodies are returned without charset detection or decoding.
+  URGE_BINDING(Name : "body", Binary : true)
+  std::string GetBody();
   URGE_BINDING(Name : "error")
   std::string GetError();
   URGE_BINDING(Name : "progress")
@@ -159,8 +156,6 @@ class Fetch : public Object {
   std::string GetHeader(std::string name);
   URGE_BINDING(Name : "headers")
   std::vector<std::string> GetHeaders();
-
-  const std::string& body();
 
   void Attach(std::unique_ptr<FetchImpl> impl);
 

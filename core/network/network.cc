@@ -81,8 +81,8 @@ int32_t NetworkEvent::GetType() {
   return type_;
 }
 
-std::string NetworkEvent::GetText() {
-  return text_;
+std::string NetworkEvent::GetData() {
+  return data_;
 }
 
 int32_t NetworkEvent::GetCode() {
@@ -138,14 +138,9 @@ int32_t WebSocket::GetDropped() {
   return dropped_;
 }
 
-void WebSocket::SendText(std::string data) {
+void WebSocket::Send(std::string data) {
   if (impl_)
-    impl_->SendText(data);
-}
-
-void WebSocket::SendBinary(std::string data) {
-  if (impl_)
-    impl_->SendBinary(data);
+    impl_->Send(data);
 }
 
 void WebSocket::SendPing(std::string data) {
@@ -233,13 +228,7 @@ std::string Fetch::GetStatusText() {
   return status_text_;
 }
 
-std::string Fetch::GetText() {
-  if (impl_)
-    impl_->Poll(*this);
-  return body_;
-}
-
-const std::string& Fetch::body() {
+std::string Fetch::GetBody() {
   if (impl_)
     impl_->Poll(*this);
   return body_;

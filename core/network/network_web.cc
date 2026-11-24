@@ -136,14 +136,7 @@ class WebWebSocketImpl final : public WebSocketImpl {
     return static_cast<int32_t>(main_queue_.size());
   }
 
-  void SendText(const std::string& data) override {
-    if (ready_state_ != WebSocket::OpenState)
-      return;
-
-    emscripten_websocket_send_utf8_text(socket_, data.c_str());
-  }
-
-  void SendBinary(const std::string& data) override {
+  void Send(const std::string& data) override {
     if (ready_state_ != WebSocket::OpenState)
       return;
 
@@ -236,17 +229,10 @@ class WebWebSocketImpl final : public WebSocketImpl {
     // Emscripten includes the terminating NUL in numBytes for text events.
     const auto size = event->isText && event->numBytes > 0 ? event->numBytes - 1
                                                            : event->numBytes;
-    const std::string data(reinterpret_cast<const char*>(event->data), size);
-    if (event->isText) {
-      auto text = MakeEvent(NetworkEvent::Text);
-      text->text_ = data;
-      text->data_ = data;
-      worker_queue_.push_back(std::move(text));
-    } else {
-      auto binary = MakeEvent(NetworkEvent::Binary);
-      binary->data_ = data;
-      worker_queue_.push_back(std::move(binary));
-    }
+    auto message = MakeEvent(NetworkEvent::Message);
+    if (size > 0)
+      message->data_.assign(reinterpret_cast<const char*>(event->data), size);
+    worker_queue_.push_back(std::move(message));
   }
 
   void HandleClose(const EmscriptenWebSocketCloseEvent* event) {
