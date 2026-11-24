@@ -72,49 +72,70 @@ jobs:
 
   linux:
     name: linux-amd64
-    # Keep the glibc baseline stable instead of following ubuntu-latest.
     runs-on: ubuntu-24.04
+    # Only CI uses this sysroot/toolchain; local presets stay distribution-native.
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64:latest
     timeout-minutes: 180
     defaults:
       run:
         shell: bash
     env:
-      CC: gcc-14
-      CXX: g++-14
+      CC: gcc
+      CXX: g++
       CMAKE_BUILD_PARALLEL_LEVEL: "3"
       LIBGL_ALWAYS_SOFTWARE: "1"
+      # EL8 disables its software Vulkan driver unless explicitly requested.
+      RH_SW_VULKAN: "1"
 
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: recursive
 
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: lukka/get-cmake@latest
+      - name: Verify build environment
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = x86_64
+          test "$(getconf GNU_LIBC_VERSION)" = 'glibc 2.28'
+          gcc --version
+          cmake --version
+          echo /opt/python/cp312-cp312/bin >> "$GITHUB_PATH"
 
       - name: Native dependencies
         run: |
           set -euo pipefail
-          test "$(uname -m)" = x86_64
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-14 g++-14 \
-            ninja-build nasm pkg-config libclang-dev python3-venv libssl-dev \
-            zlib1g-dev libasound2-dev libpulse-dev libx11-dev libxcursor-dev \
-            libxext-dev libxi-dev libxrandr-dev libxss-dev libxtst-dev \
-            libwayland-dev libxkbcommon-dev libdecor-0-dev libdrm-dev libgbm-dev \
-            libegl1-mesa-dev libpng-dev libtiff-dev libavif-dev \
-            xvfb xauth libvulkan1 mesa-vulkan-drivers
+          dnf install -y nasm pkgconf-pkg-config clang openssl3-devel \
+            zlib-devel alsa-lib-devel pulseaudio-libs-devel libX11-devel \
+            libXcursor-devel libXext-devel libXi-devel libXrandr-devel \
+            libXScrnSaver-devel libXtst-devel wayland-devel libxkbcommon-devel \
+            libdrm-devel mesa-libgbm-devel mesa-libEGL-devel libpng-devel \
+            libtiff-devel xorg-x11-server-Xvfb xorg-x11-xauth \
+            vulkan-loader mesa-vulkan-drivers mesa-dri-drivers mesa-libGL
+
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Python packages
-        run: python -m pip install --disable-pip-version-check -r requirements.txt
+        run: python -m pip install --disable-pip-version-check -r requirements.txt ninja
+
+      - name: CI image codecs
+        run: |
+          set -euo pipefail
+          prefix="$RUNNER_TEMP/urge-image-deps"
+          bash .github/scripts/linux-image-deps.sh "$GITHUB_WORKSPACE" \
+            "$RUNNER_TEMP/urge-image-deps-build" "$prefix"
+          echo "CMAKE_PREFIX_PATH=$prefix" >> "$GITHUB_ENV"
+          echo "PKG_CONFIG_PATH=$prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+          echo "URGE_CI_IMAGE_DEPS=$prefix" >> "$GITHUB_ENV"
 
       - name: Configure
-        run: cmake --preset linux-amd64
+        run: |
+          cmake --preset linux-amd64 -DSDLIMAGE_DEPS_SHARED=OFF \
+            -DSDLIMAGE_PNG_SHARED=OFF -DSDLIMAGE_TIF_SHARED=OFF \
+            -DSDLIMAGE_AVIF_SHARED=OFF -DSDLIMAGE_STRICT=ON \
+            -DOPENSSL_INCLUDE_DIR=/usr/include/openssl3 \
+            -DOPENSSL_SSL_LIBRARY=/usr/lib64/openssl3/libssl.so \
+            -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/openssl3/libcrypto.so
 
       - name: Build native executable
         run: |
@@ -158,6 +179,7 @@ jobs:
             'third_party/monocypher/monocypher.h:monocypher.txt'; do
             cp "${item%%:*}" "$package/licenses/${item#*:}"
           done
+          cp "$URGE_CI_IMAGE_DEPS/licenses/"* "$package/licenses/"
           tar -czf dist/urge-linux-amd64.tar.gz -C dist urge-linux-amd64
           check=build/linux-artifact-check
           mkdir -p "$check"
@@ -165,6 +187,14 @@ jobs:
           test -x "$check/urge-linux-amd64/Game"
           cmp "$package/Game" "$check/urge-linux-amd64/Game"
           file "$check/urge-linux-amd64/Game"
+          # Inspect the artifact as well as the build host: no newer glibc
+          # symbol may enter through a compiler or a prebuilt dependency.
+          readelf --version-info "$check/urge-linux-amd64/Game" \
+            | grep -oE 'GLIBC_[0-9]+(\.[0-9]+)+' | sort -Vu \
+            | tee build/linux-glibc-versions.txt
+          newest="$(sed 's/^GLIBC_//' build/linux-glibc-versions.txt | sort -V | tail -n1)"
+          test -n "$newest"
+          test "$(printf '%s\n' "$newest" 2.28 | sort -V | tail -n1)" = 2.28
           ldd "$check/urge-linux-amd64/Game" | tee build/linux-runtime-libraries.txt
           if grep -q 'not found' build/linux-runtime-libraries.txt; then exit 1; fi
 
@@ -175,6 +205,7 @@ jobs:
           icds=(/usr/share/vulkan/icd.d/lvp_icd*.json)
           test -f "${icds[0]}"
           echo "VK_DRIVER_FILES=${icds[0]}" >> "$GITHUB_ENV"
+          echo "VK_ICD_FILENAMES=${icds[0]}" >> "$GITHUB_ENV"
           runtime="$RUNNER_TEMP/urge-xdg-runtime"
           mkdir -p "$runtime"
           chmod 700 "$runtime"
@@ -202,6 +233,7 @@ jobs:
           path: |
             build-linux.log
             build/linux-runtime-libraries.txt
+            build/linux-glibc-versions.txt
             build/gpu-integration/**/engine-output.txt
             build/gpu-integration/**/gpu-results.txt
             build/gpu-integration/**/Game.log

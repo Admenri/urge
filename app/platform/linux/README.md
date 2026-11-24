@@ -10,21 +10,27 @@ run `./Game`. The executable's actual directory is also the working/save
 folder, including when launched through `PATH` from another directory. It must
 be writable for saves and logs. No external Ruby installation is needed.
 
-Official amd64 builds use Ubuntu 24.04 and GCC 14. They target glibc 2.39 or
-newer; they are not musl/Alpine binaries. GCC's C++ runtime is linked statically,
-while OpenSSL 3 and the desktop/driver libraries come from the system. Older
-Linux distributions should build from source rather than use the release ELF.
+Official amd64 CI builds use the AlmaLinux 8 based `manylinux_2_28` container
+and GCC 14. CI checks that the executable requires no glibc symbols newer than
+2.28; this environment applies only to CI, not to local source builds. These
+are not musl/Alpine binaries. GCC's C++ runtime is linked statically. OpenSSL
+3 and desktop/driver libraries still come from the system: the glibc floor
+alone does not guarantee that another distribution has compatible library
+SONAMEs. Use `ldd ./Game` to check the actual runtime dependencies.
 
-On Ubuntu 24.04, typical runtime packages are:
+On AlmaLinux 8, OpenSSL 3 is supplied by EPEL. Typical runtime packages are:
 
 ```sh
-sudo apt-get install ca-certificates libssl3t64 libgcc-s1 libcrypt1 zlib1g \
-  libzstd1 libbrotli1 libnghttp2-14 libidn2-0 libssh2-1t64 \
-  libx11-6 libxcursor1 libxext6 \
-  libxi6 libxrandr2 libxss1 libxtst6 libwayland-client0 libwayland-cursor0 \
-  libwayland-egl1 libxkbcommon0 libdecor-0-0 libasound2t64 libpulse0 \
-  libegl1 libgl1 libvulkan1 mesa-vulkan-drivers libpng16-16t64 libtiff6 libavif16
+sudo dnf install epel-release
+sudo dnf install ca-certificates openssl3-libs libgcc libxcrypt zlib \
+  libX11 libXcursor libXext libXi libXrandr libXScrnSaver libXtst \
+  wayland-libs libxkbcommon alsa-lib pulseaudio-libs mesa-libEGL mesa-libGL \
+  vulkan-loader mesa-vulkan-drivers libtiff
 ```
+
+Other distributions use different package names and may need compatibility
+packages for the listed library ABIs. Their local source builds continue to
+use the dependencies and glibc supplied by that distribution.
 
 curl can detect optional compression, HTTP/2, IDNA and SSH libraries from the
 build host; use `ldd ./Game` to inspect the exact directly linked dependencies.
@@ -33,7 +39,9 @@ are supported. wgpu-native prefers Vulkan; `[GFX] Backend=opengl` or
 `Backend=opengles` selects the GL backend when Vulkan is unavailable. Headless
 SDL drivers such as `dummy` cannot create a presentation surface. ALSA and
 PulseAudio provide native sound. HTTPS/WSS use the system certificate store.
-AVIF/TIFF/PNG support uses the system image libraries loaded by SDL_image.
+CI compiles PNG, AVIF and its AV1 codec from the pinned repository sources;
+TIFF uses a normally linked system library. The CI link options accept static
+image libraries instead of requesting SDL_image dynamic loading.
 
 Fonts are resolved from the game's `Fonts/`, the system/XDG font directories,
 and finally the embedded fallback. Bundle the game's required fonts for
@@ -93,9 +101,12 @@ Linux executable still needs Linux runtime libraries, not Windows DLLs.
 
 ## CI and local regression checks
 
-The `linux-amd64` job in `.github/workflows/build.yml` builds on `ubuntu-24.04`,
-packages the binary, extracts it, and tests the packaged executable using
-Xvfb and Mesa's software drivers. It reuses the existing GPU regression suite
+The `linux-amd64` job in `.github/workflows/build.yml` uses an Ubuntu runner
+with a `manylinux_2_28_x86_64` container. It verifies glibc 2.28, prepares its
+CI-only image dependencies, packages the binary, checks the ELF symbol
+versions, extracts it, and tests the packaged executable using
+Xvfb and Mesa's software drivers (`RH_SW_VULKAN=1` enables EL8's lavapipe).
+It reuses the existing GPU regression suite
 for both Vulkan and OpenGL, plus loopback Fetch/WebSocket tests for RGSS1,
 RGSS2 and RGSS3. The reusable build workflow is called by
 `.github/workflows/release.yml` for `v*` tags; the tarball is attached alongside
