@@ -42,7 +42,7 @@
 | WebAssembly（支持 WebGPU 的浏览器） | `Game.html` + `Game.wasm` | 浏览器 WebGPU | 视频默认关闭；网络可用 |
 | Android 9+（API 28，arm64-v8a / x86_64） | APK | Vulkan 1.1 | 视频与网络默认开启；TLS 使用内置 mbedTLS |
 | MacOS >= 13.3 (Apple Silicon) | `Game` (Mach-O可执行文件) / `URGE.app` (App包) | wgpu-native → Metal | 实验性支持 |
-| Linux（amd64，glibc 2.39+） | `Game`（ELF）/ `urge-linux-amd64.tar.gz` | wgpu-native → Vulkan / OpenGL；X11 / Wayland | 视频与网络默认开启；可在 WSL2 构建 |
+| Linux（amd64, glibc 2.28+） | `Game`（ELF）/ `urge-linux-amd64.tar.gz` | wgpu-native → Vulkan / OpenGL；X11 / Wayland | 视频与网络默认开启；|
 
 ### Ruby 脚本 API
 
@@ -207,7 +207,7 @@ cmake --preset linux-amd64
 cmake --build --preset linux-amd64 --parallel 4
 ```
 
-本地构建产物为 `build/linux-amd64/app/Game`；CI 会将程序与许可说明打包为 `urge-linux-amd64.tar.gz`。把 `Game` 放到游戏目录（与 `Game.ini` 同级）后运行。支持 X11 / Wayland，默认优先 Vulkan，可设置 `[GFX] Backend=opengl`。Windows 用户需在 WSL2 内运行以上命令；WSLg 提供图形桌面。发布包基于 Ubuntu 24.04（glibc 2.39），更旧的发行版请本地编译。
+本地构建产物为 `build/linux-amd64/app/Game`；CI 会将程序与许可说明打包为 `urge-linux-amd64.tar.gz`。把 `Game` 放到游戏目录（与 `Game.ini` 同级）后运行。支持 X11 / Wayland，默认优先 Vulkan，可设置 `[GFX] Backend=opengl`。Windows 用户需在 WSL2 内运行以上命令；WSLg 提供图形桌面。发布包基于 AlmaLinux 8（glibc 2.28），更旧的发行版请本地编译。
 
 完整依赖安装、运行限制与验证命令见 [Linux / WSL2 指南](app/platform/linux/README.md)。
 

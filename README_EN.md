@@ -42,7 +42,7 @@ WebGPU is the single rendering backend. The 2D screen and 3D world share one dev
 | WebAssembly (WebGPU-capable browser) | `Game.html` + `Game.wasm` | Browser WebGPU | Video off by default; networking available |
 | Android 9+ (API 28, arm64-v8a / x86_64) | APK | Vulkan 1.1 | Video and networking on by default; TLS via the vendored mbedTLS |
 | MacOS >= 13.3 (Apple Silicon) | `Game` (Mach-O executable) / `URGE.app` (App package) | wgpu-native → Metal | Experimental |
-| Linux (amd64, glibc 2.39+) | `Game` (ELF) / `urge-linux-amd64.tar.gz` | wgpu-native → Vulkan / OpenGL; X11 / Wayland | Video and networking on by default; builds in WSL2 |
+| Linux (amd64, glibc 2.28+) | `Game` (ELF) / `urge-linux-amd64.tar.gz` | wgpu-native → Vulkan / OpenGL; X11 / Wayland | Video and networking on by default; |
 
 ### Ruby Script API
 
@@ -213,7 +213,7 @@ license notices as `urge-linux-amd64.tar.gz`.
 Place `Game` beside the game's `Game.ini` and run it. Both X11 and Wayland are
 supported; Vulkan is preferred, with `[GFX] Backend=opengl` available. Windows
 users run these commands inside WSL2 and use WSLg for the display. Release
-binaries use Ubuntu 24.04 (glibc 2.39); build locally on older distributions.
+binaries use  AlmaLinux 8 (glibc 2.28); build locally on older distributions.
 
 See the [Linux / WSL2 guide](app/platform/linux/README.md) for dependency packages,
 runtime limitations and regression commands.
