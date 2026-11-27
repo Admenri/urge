@@ -13,35 +13,40 @@ be writable for saves and logs. No external Ruby installation is needed.
 Official amd64 CI builds use the AlmaLinux 8 based `manylinux_2_28` container
 and GCC 14. CI checks that the executable requires no glibc symbols newer than
 2.28; this environment applies only to CI, not to local source builds. These
-are not musl/Alpine binaries. GCC's C++ runtime is linked statically. OpenSSL
-3 and desktop/driver libraries still come from the system: the glibc floor
-alone does not guarantee that another distribution has compatible library
-SONAMEs. Use `ldd ./Game` to check the actual runtime dependencies.
+are not musl/Alpine binaries. SDL, Ruby, wgpu, FreeType, the media codecs,
+OpenSSL (including its providers), zlib, JPEG, TIFF and the GCC C++/unwind
+runtimes are linked statically. glibc and the system's `libcrypt.so.1` remain
+dynamic dependencies; graphics/audio drivers are loaded from the target system.
+Use `ldd ./Game` to check the actual runtime dependencies.
 
-On AlmaLinux 8, OpenSSL 3 is supplied by EPEL. Typical runtime packages are:
+On AlmaLinux 8, typical runtime packages are:
 
 ```sh
-sudo dnf install epel-release
-sudo dnf install ca-certificates openssl3-libs libgcc libxcrypt zlib \
+sudo dnf install ca-certificates libxcrypt \
   libX11 libXcursor libXext libXi libXrandr libXScrnSaver libXtst \
   wayland-libs libxkbcommon alsa-lib pulseaudio-libs mesa-libEGL mesa-libGL \
-  vulkan-loader mesa-vulkan-drivers libtiff
+  vulkan-loader mesa-vulkan-drivers
 ```
 
 Other distributions use different package names and may need compatibility
 packages for the listed library ABIs. Their local source builds continue to
 use the dependencies and glibc supplied by that distribution.
 
-curl can detect optional compression, HTTP/2, IDNA and SSH libraries from the
-build host; use `ldd ./Game` to inspect the exact directly linked dependencies.
 Install the appropriate vendor GPU driver as well. Both X11 and Wayland windows
 are supported. wgpu-native prefers Vulkan; `[GFX] Backend=opengl` or
 `Backend=opengles` selects the GL backend when Vulkan is unavailable. Headless
 SDL drivers such as `dummy` cannot create a presentation surface. ALSA and
-PulseAudio provide native sound. HTTPS/WSS use the system certificate store.
-CI compiles PNG, AVIF and its AV1 codec from the pinned repository sources;
-TIFF uses a normally linked system library. The CI link options accept static
-image libraries instead of requesting SDL_image dynamic loading.
+PulseAudio provide native sound. HTTPS/WSS verify peers using OpenSSL's system
+trust store (EL8's default `/etc/pki/tls`). On distributions with a different CA
+layout, use e.g. `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt ./Game`.
+No external OpenSSL provider modules or system OpenSSL configuration are needed.
+
+CI compiles its static image libraries from the pinned repository sources and
+OpenSSL from the same checked source pin as macOS. TIFF supports its built-in
+codecs, JPEG/Old JPEG, Deflate and PixarLog; optional external TIFF codecs
+(JBIG, LERC, LZMA, ZSTD, WebP) are not included in this release build.
+`libcrypt` stays system-linked to retain Ruby's full password-hash support
+without adding a static LGPL library to the executable.
 
 Fonts are resolved from the game's `Fonts/`, the system/XDG font directories,
 and finally the embedded fallback. Bundle the game's required fonts for
@@ -103,8 +108,8 @@ Linux executable still needs Linux runtime libraries, not Windows DLLs.
 
 The `linux-amd64` job in `.github/workflows/build.yml` uses an Ubuntu runner
 with a `manylinux_2_28_x86_64` container. It verifies glibc 2.28, prepares its
-CI-only image dependencies, packages the binary, checks the ELF symbol
-versions, extracts it, and tests the packaged executable using
+CI-only static dependencies, packages the binary, checks the ELF symbol
+versions and shared-library allowlist, extracts it, and tests the packaged executable using
 Xvfb and Mesa's software drivers (`RH_SW_VULKAN=1` enables EL8's lavapipe).
 It reuses the existing GPU regression suite
 for both Vulkan and OpenGL, plus loopback Fetch/WebSocket tests for RGSS1,

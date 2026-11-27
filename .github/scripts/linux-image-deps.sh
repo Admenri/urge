@@ -12,27 +12,96 @@ repo=$(cd "$1" && pwd)
 mkdir -p "$2" "$3"
 work=$(cd "$2" && pwd)
 prefix=$(cd "$3" && pwd)
+zlib_source="$repo/third_party/zlib"
 png_source="$repo/third_party/SDL_image/external/libpng"
+jpeg_source="$repo/third_party/SDL_image/external/jpeg"
+tiff_source="$repo/third_party/SDL_image/external/libtiff"
 aom_source="$repo/third_party/SDL_image/external/aom"
 avif_source="$repo/third_party/SDL_image/external/libavif"
 parallel=${CMAKE_BUILD_PARALLEL_LEVEL:-3}
 
+test -f "$zlib_source/CMakeLists.txt"
 test -f "$png_source/CMakeLists.txt"
+test -f "$jpeg_source/CMakeLists.txt"
+test -f "$tiff_source/CMakeLists.txt"
 test -f "$aom_source/CMakeLists.txt"
 test -f "$avif_source/CMakeLists.txt"
 
+# TIFF's JPEG and Deflate codecs must not introduce additional runtime library
+# requirements. Build their pinned repository dependencies into the CI prefix.
+cmake -S "$zlib_source" -B "$work/zlib" -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DZLIB_BUILD_SHARED=OFF -DZLIB_BUILD_STATIC=ON \
+  -DZLIB_BUILD_TESTING=OFF -DZLIB_INSTALL=ON
+cmake --build "$work/zlib" --parallel "$parallel"
+cmake --install "$work/zlib"
+
+cmake -S "$jpeg_source" -B "$work/jpeg" -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBUILD_SHARED_LIBS=OFF
+cmake --build "$work/jpeg" --parallel "$parallel"
+cmake --install "$work/jpeg"
+
 # Exercise the static-PNG path in CI. SDL_image must link this archive instead
 # of trying to dlopen it; the main CI configure sets SDLIMAGE_PNG_SHARED=OFF.
-# zlib continues to come from the glibc 2.28 build environment.
 cmake -S "$png_source" -B "$work/libpng" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib \
   -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DZLIB_INCLUDE_DIR="$prefix/include" -DZLIB_LIBRARY="$prefix/lib/libz.a" \
+  -DZLIB_LIBRARY_RELEASE="$prefix/lib/libz.a" \
   -DPNG_SHARED=OFF -DPNG_STATIC=ON -DPNG_FRAMEWORK=OFF \
   -DPNG_TESTS=OFF -DPNG_TOOLS=OFF -DPNG_EXECUTABLES=OFF \
   -DSKIP_INSTALL_EXECUTABLES=ON -DSKIP_INSTALL_PROGRAMS=ON
 cmake --build "$work/libpng" --parallel "$parallel"
 cmake --install "$work/libpng"
+
+# Keep TIFF's built-in codecs, JPEG (including old-style JPEG), and Deflate /
+# PixarLog enabled. Optional external codecs are disabled explicitly so their
+# presence in the builder cannot add unbundled shared-library dependencies.
+cmake -S "$tiff_source" -B "$work/libtiff" -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib \
+  -DCMAKE_PREFIX_PATH="$prefix" -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DBUILD_SHARED_LIBS=OFF -Dtiff-static=ON -Dtiff-install=ON \
+  -Dtiff-tools=OFF -Dtiff-tests=OFF -Dtiff-contrib=OFF -Dtiff-docs=OFF \
+  -Dtiff-cxx=OFF -Dtiff-opengl=OFF \
+  -Dccitt=ON -Dpackbits=ON -Dlzw=ON -Dthunder=ON -Dnext=ON -Dlogluv=ON -Dmdi=ON \
+  -Dzlib=ON -Dpixarlog=ON -Dlibdeflate=OFF \
+  -DZLIB_INCLUDE_DIR="$prefix/include" -DZLIB_LIBRARY="$prefix/lib/libz.a" \
+  -DZLIB_LIBRARY_RELEASE="$prefix/lib/libz.a" \
+  -Djpeg=ON -Dold-jpeg=ON -Djpeg12=OFF -Djpeg-prefer-standard=ON \
+  -DJPEG_INCLUDE_DIR="$prefix/include" -DJPEG_LIBRARY="$prefix/lib/libjpeg.a" \
+  -DJPEG_LIBRARY_RELEASE="$prefix/lib/libjpeg.a" \
+  -Djbig=OFF -Dlerc=OFF -Dlzma=OFF -Dzstd=OFF -Dwebp=OFF
+cmake --build "$work/libtiff" --parallel "$parallel"
+cmake --install "$work/libtiff"
+
+# libtiff's installed package leaves static dependency discovery as a TODO.
+# Give SDL_image a complete target in this CI prefix; local source builds keep
+# using their usual finders. Absolute archive paths also avoid cached system
+# JPEG/ZLIB targets silently selecting shared libraries.
+package="$prefix/lib/cmake/tiff"
+cat > "$package/tiff-config.cmake" <<'CMAKE'
+get_filename_component(_urge_ci_image_prefix "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+if(NOT TARGET TIFF::tiff)
+  add_library(TIFF::tiff STATIC IMPORTED GLOBAL)
+  set_target_properties(TIFF::tiff PROPERTIES
+    IMPORTED_LOCATION "${_urge_ci_image_prefix}/lib/libtiff.a"
+    INTERFACE_INCLUDE_DIRECTORIES "${_urge_ci_image_prefix}/include"
+    INTERFACE_LINK_LIBRARIES "${_urge_ci_image_prefix}/lib/libjpeg.a;${_urge_ci_image_prefix}/lib/libz.a;m")
+endif()
+if(NOT TARGET TIFF::TIFF)
+  add_library(TIFF::TIFF ALIAS TIFF::tiff)
+endif()
+set(TIFF_INCLUDE_DIR "${_urge_ci_image_prefix}/include")
+set(TIFF_INCLUDE_DIRS "${TIFF_INCLUDE_DIR}")
+set(TIFF_LIBRARIES TIFF::tiff)
+unset(_urge_ci_image_prefix)
+CMAKE
 
 # EL8's libavif is older than SDL_image's required version. Use the pinned
 # repository sources, including both halves of AOM's AV1 codec.
@@ -98,7 +167,12 @@ CMAKE
 cmake "-DPREFIX=$prefix" -P "$work/libavif-package-version.cmake"
 
 mkdir -p "$prefix/licenses"
+install -m 644 "$zlib_source/LICENSE" "$prefix/licenses/zlib.txt"
 install -m 644 "$png_source/LICENSE" "$prefix/licenses/libpng.txt"
+install -m 644 "$jpeg_source/COPYING" "$prefix/licenses/jpeg.txt"
+printf '%s\n' 'This software is based in part on the work of the Independent JPEG Group.' \
+  > "$prefix/licenses/jpeg-notice.txt"
+install -m 644 "$tiff_source/LICENSE.md" "$prefix/licenses/libtiff.txt"
 install -m 644 "$avif_source/LICENSE" "$prefix/licenses/libavif.txt"
 install -m 644 "$aom_source/LICENSE" "$prefix/licenses/aom.txt"
 install -m 644 "$aom_source/PATENTS" "$prefix/licenses/aom-patents.txt"
@@ -112,7 +186,10 @@ for item in \
   install -m 644 "$aom_source/${item%%:*}" "$prefix/licenses/${item#*:}"
 done
 
+test -f "$prefix/lib/libz.a"
+test -f "$prefix/lib/libjpeg.a"
 test -f "$prefix/lib/libpng16.a"
+test -f "$prefix/lib/libtiff.a"
 test -f "$prefix/lib/libaom.a"
 test -f "$prefix/lib/libavif.a"
 printf 'CI image libraries installed in %s\n' "$prefix"

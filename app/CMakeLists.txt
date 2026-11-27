@@ -38,8 +38,8 @@ target_link_libraries(Game PUBLIC urge-core urge-binding)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID
    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # Ship the C++ runtime with Game instead of requiring the build machine's
-  # GLIBCXX version. glibc, OpenSSL and graphics/audio drivers remain system
-  # libraries, so release builds still use the Ubuntu 24.04 baseline.
+  # GLIBCXX version. glibc and graphics/audio drivers remain system libraries;
+  # CI selects its dependency linkage and glibc baseline in the workflow.
   target_link_options(Game PRIVATE -static-libstdc++ -static-libgcc)
 endif()
 

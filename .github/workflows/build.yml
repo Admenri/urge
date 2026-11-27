@@ -105,12 +105,12 @@ jobs:
       - name: Native dependencies
         run: |
           set -euo pipefail
-          dnf install -y nasm pkgconf-pkg-config clang openssl3-devel \
+          dnf install -y nasm pkgconf-pkg-config clang perl-core \
             zlib-devel alsa-lib-devel pulseaudio-libs-devel libX11-devel \
             libXcursor-devel libXext-devel libXi-devel libXrandr-devel \
             libXScrnSaver-devel libXtst-devel wayland-devel libxkbcommon-devel \
-            libdrm-devel mesa-libgbm-devel mesa-libEGL-devel libpng-devel \
-            libtiff-devel xorg-x11-server-Xvfb xorg-x11-xauth \
+            libdrm-devel mesa-libgbm-devel mesa-libEGL-devel \
+            xorg-x11-server-Xvfb xorg-x11-xauth \
             vulkan-loader mesa-vulkan-drivers mesa-dri-drivers mesa-libGL
 
       - uses: dtolnay/rust-toolchain@stable
@@ -118,12 +118,14 @@ jobs:
       - name: Python packages
         run: python -m pip install --disable-pip-version-check -r requirements.txt ninja
 
-      - name: CI image codecs
+      - name: CI static dependencies
         run: |
           set -euo pipefail
           prefix="$RUNNER_TEMP/urge-image-deps"
           bash .github/scripts/linux-image-deps.sh "$GITHUB_WORKSPACE" \
             "$RUNNER_TEMP/urge-image-deps-build" "$prefix"
+          python .github/scripts/linux-openssl-deps.py "$GITHUB_WORKSPACE" \
+            "$RUNNER_TEMP/urge-openssl-deps-build" "$prefix"
           echo "CMAKE_PREFIX_PATH=$prefix" >> "$GITHUB_ENV"
           echo "PKG_CONFIG_PATH=$prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
           echo "URGE_CI_IMAGE_DEPS=$prefix" >> "$GITHUB_ENV"
@@ -133,9 +135,17 @@ jobs:
           cmake --preset linux-amd64 -DSDLIMAGE_DEPS_SHARED=OFF \
             -DSDLIMAGE_PNG_SHARED=OFF -DSDLIMAGE_TIF_SHARED=OFF \
             -DSDLIMAGE_AVIF_SHARED=OFF -DSDLIMAGE_STRICT=ON \
-            -DOPENSSL_INCLUDE_DIR=/usr/include/openssl3 \
-            -DOPENSSL_SSL_LIBRARY=/usr/lib64/openssl3/libssl.so \
-            -DOPENSSL_CRYPTO_LIBRARY=/usr/lib64/openssl3/libcrypto.so
+            -DOPENSSL_USE_STATIC_LIBS=ON \
+            -DOPENSSL_INCLUDE_DIR="$URGE_CI_IMAGE_DEPS/include" \
+            -DOPENSSL_SSL_LIBRARY="$URGE_CI_IMAGE_DEPS/lib/libssl.a" \
+            -DOPENSSL_CRYPTO_LIBRARY="$URGE_CI_IMAGE_DEPS/lib/libcrypto.a" \
+            -DZLIB_INCLUDE_DIR="$URGE_CI_IMAGE_DEPS/include" \
+            -DZLIB_LIBRARY_RELEASE="$URGE_CI_IMAGE_DEPS/lib/libz.a" \
+            -DTIFF_DIR="$URGE_CI_IMAGE_DEPS/lib/cmake/tiff" \
+            -DCURL_DISABLE_OPENSSL_AUTO_LOAD_CONFIG=ON \
+            -DCURL_CA_BUNDLE=none -DCURL_CA_PATH=none -DCURL_CA_FALLBACK=ON \
+            -DURGE_CI_STATIC_DEPS_PREFIX="$URGE_CI_IMAGE_DEPS" \
+            -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="$GITHUB_WORKSPACE/.github/scripts/linux-static-link.cmake"
 
       - name: Build native executable
         run: |
@@ -180,6 +190,9 @@ jobs:
             cp "${item%%:*}" "$package/licenses/${item#*:}"
           done
           cp "$URGE_CI_IMAGE_DEPS/licenses/"* "$package/licenses/"
+          gcc_doc=/usr/share/licenses/gcc
+          cp "$gcc_doc/COPYING3" "$package/licenses/gcc-gpl.txt"
+          cp "$gcc_doc/COPYING.RUNTIME" "$package/licenses/gcc-runtime-exception.txt"
           tar -czf dist/urge-linux-amd64.tar.gz -C dist urge-linux-amd64
           check=build/linux-artifact-check
           mkdir -p "$check"
@@ -195,6 +208,16 @@ jobs:
           newest="$(sed 's/^GLIBC_//' build/linux-glibc-versions.txt | sort -V | tail -n1)"
           test -n "$newest"
           test "$(printf '%s\n' "$newest" 2.28 | sort -V | tail -n1)" = 2.28
+          # Checking only in the builder can hide accidentally shared dependencies.
+          # Only glibc's DSOs and Ruby's system crypt implementation are permitted.
+          readelf -d "$check/urge-linux-amd64/Game" | sed -n 's/.*Shared library: \[\(.*\)\].*/\1/p' \
+            | tee build/linux-needed-libraries.txt
+          while read -r library; do
+            case "$library" in
+              libc.so.6|libm.so.6|libpthread.so.0|libdl.so.2|librt.so.1|libutil.so.1|libcrypt.so.1|ld-linux-x86-64.so.2) ;;
+              *) echo "Unexpected shared dependency: $library" >&2; exit 1 ;;
+            esac
+          done < build/linux-needed-libraries.txt
           ldd "$check/urge-linux-amd64/Game" | tee build/linux-runtime-libraries.txt
           if grep -q 'not found' build/linux-runtime-libraries.txt; then exit 1; fi
 
@@ -233,6 +256,7 @@ jobs:
           path: |
             build-linux.log
             build/linux-runtime-libraries.txt
+            build/linux-needed-libraries.txt
             build/linux-glibc-versions.txt
             build/gpu-integration/**/engine-output.txt
             build/gpu-integration/**/gpu-results.txt
