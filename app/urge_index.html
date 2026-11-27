@@ -124,12 +124,35 @@
     var canvasElement = document.getElementById('canvas');
 
     function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.body.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
+      if (!document.fullscreenEnabled) return;
+
+      const request = document.fullscreenElement
+        ? document.exitFullscreen()
+        : document.body.requestFullscreen();
+      request.catch(error => console.warn('Could not toggle fullscreen:', error));
     }
+
+    // Enter fullscreen within the browser's key event, rather than after
+    // SDL delivers it to the game loop. Reserve the chord from game input.
+    const fullscreenShortcutKeys = new Set();
+    window.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+
+      if (!event.repeat && !event.isComposing && event.altKey &&
+          !event.ctrlKey && !event.shiftKey && !event.metaKey &&
+          !event.getModifierState('AltGraph')) {
+        fullscreenShortcutKeys.add(event.code);
+        toggleFullscreen();
+      }
+      if (fullscreenShortcutKeys.has(event.code)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }, true);
+    window.addEventListener('keyup', (event) => {
+      if (fullscreenShortcutKeys.delete(event.code)) event.stopPropagation();
+    }, true);
+    window.addEventListener('blur', () => fullscreenShortcutKeys.clear());
 
     // The element keeps the backing store's ratio, centred, as large as the
     // viewport allows.  Two things depend on that and neither tolerates the

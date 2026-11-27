@@ -139,6 +139,7 @@ class FrameTimeHistory {
 
   bool empty() const { return samples_.empty(); }
   size_t size() const { return samples_.size(); }
+  double At(size_t index) const { return samples_[(next_ + index) % kCapacity]; }
 
   std::vector<double> Ordered() const {
     if (samples_.size() < kCapacity)
@@ -310,7 +311,7 @@ struct RenderStats {
   RenderFrameCounters last;
 
   FrameTimings timings;
-  FrameTimeHistory frame_history;
+  FrameTimeHistory present_history;
   FrameTimingRing timing_history;
 
   FrameTimeTotals run;

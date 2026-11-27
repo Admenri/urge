@@ -103,59 +103,6 @@ class AudioClip {
   std::atomic<bool> at_end_{false};
 };
 
-class AudioChannel {
- public:
-  AudioChannel(AudioService* service, AudioBus bus);
-  ~AudioChannel();
-
-  AudioChannel(const AudioChannel&) = delete;
-  AudioChannel& operator=(const AudioChannel&) = delete;
-
-  bool Play(const std::string& filename,
-            int32_t volume,
-            int32_t pitch,
-            float pos = 0.0f);
-  void Stop();
-  void Fade(int32_t time);
-  float Pos();
-
-  bool IsPlaying();
-  bool IsPausing() const { return paused_; }
-  void Pause();
-  void Resume();
-
-  void SetLooping(bool looping);
-
- private:
-  AudioService* service_ = nullptr;
-  AudioBus bus_ = AudioBus::kBGM;
-  std::string filename_;
-  AudioClip clip_;
-  ma_uint64 pause_cursor_ = 0;
-  bool paused_ = false;
-  bool looping_ = false;
-};
-
-class AudioEmit {
- public:
-  AudioEmit(AudioService* service, AudioBus bus);
-  ~AudioEmit();
-
-  AudioEmit(const AudioEmit&) = delete;
-  AudioEmit& operator=(const AudioEmit&) = delete;
-
-  bool Play(const std::string& filename, int32_t volume, int32_t pitch);
-  void Stop();
-  int32_t active() const { return static_cast<int32_t>(queue_.size()); }
-
- private:
-  void Reap(bool all);
-
-  AudioService* service_ = nullptr;
-  AudioBus bus_ = AudioBus::kSE;
-  std::deque<std::unique_ptr<AudioClip>> queue_;
-};
-
 class AudioService {
  public:
   ~AudioService();
@@ -180,8 +127,14 @@ class AudioService {
   void SetPaused(bool paused);
   bool paused() const { return paused_.load(std::memory_order_relaxed); }
 
-  AudioChannel* CreateStream(AudioBus bus);
-  AudioEmit* CreateEmitter();
+  void Play(AudioBus bus,
+            const std::string& filename,
+            int32_t volume,
+            int32_t pitch,
+            float pos = 0.0f);
+  void Stop(AudioBus bus);
+  void Fade(AudioBus bus, int32_t time);
+  float Pos(AudioBus bus);
 
   // The engine belongs to the audio thread on everything that can run one.
   // Post() runs WORK there without waiting; RunSync() waits and runs inline
@@ -212,6 +165,7 @@ class AudioService {
   void StopWorker();
   void WorkerLoop();
   void MixToStream();
+  void ResumeBGMIfMEEnded();
 
   // Audio thread only.
   ma_engine* engine();

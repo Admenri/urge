@@ -319,11 +319,13 @@ C = Space,Return,pad:a
 | `GFX` | `PresentSampler` | `nearest` | 最终画面采样：`nearest` / `linear` |
 | `GFX` | `Upscaler` | `off` | 放大算法：`off` / `nearest` / `linear` / `bicubic` / `lanczos` / `fsr1`（仅窗口大于逻辑分辨率时生效） |
 | `Input` | `PadBindings` | `false` | 是否已写入手柄默认绑定 |
+| `Input` | `DisableF1` | `false` | 设为 `true` 后，F1 不再打开引擎设置面板 |
+| `Input` | `DisableF2` | `false` | 设为 `true` 后，F2 不再切换帧率面板 |
 | `KeyBinding` | — | — | 每个 slot 一行；手柄项写成 `pad:<token>` |
 
 补充说明：
 
-- **F1 / F2**：F1 打开设置面板（键位、图形、音频与引擎信息，可在此添加键位绑定），F2 切换帧率显示。
+- **F1 / F2**：F1 打开设置面板（键位、图形、音频与引擎信息，可在此添加键位绑定），F2 切换帧率显示。可在 `[Input]` 中分别禁用这两个引擎快捷键，不影响游戏自己的键位绑定。
 - **字体**：按 `Fonts/` → 系统字库 → 内嵌字体的顺序解析；文件名（可省略扩展名）与族名均可使用。系统字体发现范围与缺字回退见 [字体说明](core/font/README.md)。
 - **手柄**：键盘与手柄映射到同一套 slot；手柄热插拔即用，支持多设备、震动与摇杆 / 扳机。
 - **脚本编码**：内置 Ruby 在各平台（含 WASM）静态支持 RGSS3 的 `single_byte`、`utf_16_32`、`japanese_sjis`，包括 Shift_JIS、Windows-31J/CP932、UTF-16/32 和单字节代码页的双向转码；不依赖系统 iconv 或 Win32 转码 API。具体范围和来源见 [编码模块说明](third_party/ruby/cmake/RGSS_ENCODINGS.md)。

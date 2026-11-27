@@ -329,11 +329,13 @@ Configuration reference:
 | `GFX` | `PresentSampler` | `nearest` | Final present sampling: `nearest` / `linear` |
 | `GFX` | `Upscaler` | `off` | Upscaler: `off` / `nearest` / `linear` / `bicubic` / `lanczos` / `fsr1` (only when the window is larger than the logical resolution) |
 | `Input` | `PadBindings` | `false` | Whether the default gamepad bindings have been written |
+| `Input` | `DisableF1` | `false` | Set to `true` to stop F1 from opening the engine settings panel |
+| `Input` | `DisableF2` | `false` | Set to `true` to stop F2 from toggling the frame-rate panel |
 | `KeyBinding` | — | — | One line per slot; gamepad entries use `pad:<token>` |
 
 Additional notes:
 
-- **F1 / F2**: F1 opens the settings panel (key bindings, graphics, audio and engine information; new key bindings can be added there); F2 toggles the frame-rate display.
+- **F1 / F2**: F1 opens the settings panel (key bindings, graphics, audio and engine information; new key bindings can be added there); F2 toggles the frame-rate display. Disable these engine shortcuts independently in `[Input]` without affecting the game's own key bindings.
 - **Fonts**: resolved as `Fonts/` → system fonts → embedded font; both file names (extension optional) and family names work. See [platform discovery and glyph fallback (Chinese)](core/font/README.md) for platform coverage and limits.
 - **Gamepads**: keyboard and gamepad map to the same set of slots; gamepads are hot-pluggable, with support for multiple devices, rumble, sticks and triggers.
 - **Script encodings**: bundled Ruby statically provides RGSS3's `single_byte`, `utf_16_32`, and `japanese_sjis` modules on all platforms, including WASM. Shift_JIS, Windows-31J/CP932, UTF-16/32, and single-byte code pages support conversion in both directions without system iconv or Win32 conversion APIs. See [encoding module details](third_party/ruby/cmake/RGSS_ENCODINGS.md).
