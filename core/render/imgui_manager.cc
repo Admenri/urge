@@ -23,7 +23,6 @@
 #include "core/render/imgui_manager.h"
 
 #include <algorithm>
-#include <climits>
 #include <cmath>
 #include <cstdlib>
 #include <initializer_list>
@@ -242,7 +241,9 @@ void ImGuiManager::ProcessEvent(const SDL_Event& event) {
     return;
   }
 
-  if (scancode == kToggleSettingsKey) {
+  const auto& input = Config::Get().input;
+  // If the setting changes while the panel is open, F1 can still close it.
+  if (scancode == kToggleSettingsKey && (!input.disable_f1 || settings_visible_)) {
     settings_visible_ = !settings_visible_;
     if (!settings_visible_) {
       capture_slot_ = -1;
@@ -250,7 +251,7 @@ void ImGuiManager::ProcessEvent(const SDL_Event& event) {
       SaveSettings();
     }
     LOGGER_INFO("settings overlay {}", settings_visible_ ? "shown" : "hidden");
-  } else if (scancode == kToggleFPSKey) {
+  } else if (scancode == kToggleFPSKey && !input.disable_f2) {
     fps_visible_ = !fps_visible_;
     LOGGER_INFO("frame monitor {}", fps_visible_ ? "shown" : "hidden");
   }
@@ -888,7 +889,7 @@ void ImGuiManager::BuildFPSWindow() {
   const float margin = U(12.0f);
   const ImVec2 display = viewport->Size;
 
-  const ImVec2 default_size(U(340.0f), U(360.0f));
+  const ImVec2 default_size(U(340.0f), U(390.0f));
 
   FpsWindowGeometry& geometry = fps_window_;
 
@@ -963,13 +964,45 @@ void ImGuiManager::BuildFPSWindow() {
   }
 
   const RenderStats& stats = GetRenderStats();
-  const FrameTimeHistory& history = stats.frame_history;
+  const FrameTimeHistory& history = stats.present_history;
+
+  // A short rolling rate keeps ordinary pacing jitter from dominating the
+  // graph; divide the actual number of frames by the elapsed wall time.
+  constexpr double kFpsWindowMs = 250.0;
+  fps_samples_.clear();
+  double elapsed_ms = 0.0;
+  size_t first = 0;
+  for (size_t i = 0; i < history.size(); ++i) {
+    elapsed_ms += history.At(i);
+    while (first < i && elapsed_ms - history.At(first) >= kFpsWindowMs)
+      elapsed_ms -= history.At(first++);
+    if (elapsed_ms >= kFpsWindowMs) {
+      fps_samples_.push_back(
+          static_cast<float>(1000.0 * (i - first + 1) / elapsed_ms));
+    }
+  }
+
+  if (fps_samples_.empty())
+    ImGui::TextUnformatted("Measuring FPS...");
+  else
+    ImGui::Text("Current FPS: %.1f", fps_samples_.back());
+
+  const int plot_count = static_cast<int>(fps_samples_.size());
+  if (plot_count >= 2) {
+    const float peak = *std::max_element(fps_samples_.begin(), fps_samples_.end());
+    const float plot_max = std::max(30.0f, std::ceil(peak * 1.1f / 15.0f) * 15.0f);
+    ImGui::TextDisabled("FPS history (0-%.0f FPS)", plot_max);
+    ImGui::PushStyleColor(ImGuiCol_PlotLines,
+                          ImGui::GetStyleColorVec4(ImGuiCol_SliderGrab));
+    ImGui::PushStyleColor(ImGuiCol_PlotLinesHovered,
+                          ImGui::GetStyleColorVec4(ImGuiCol_CheckMark));
+    ImGui::PlotLines("##fps_history", fps_samples_.data(), plot_count, 0, nullptr,
+                     0.0f, plot_max, ImVec2(-FLT_MIN, U(64.0f)));
+    ImGui::PopStyleColor(2);
+  }
+
+  ImGui::Spacing();
   const FrameTimings& timings = stats.timings;
-
-  const int32_t target_rate =
-      std::max(1, Graphics::Get().Attr_FrameRate().value_or(60));
-  const double budget_ms = 1000.0 / static_cast<double>(target_rate);
-
   const float radius = U(50.0f);
   const float available = ImGui::GetContentRegionAvail().x;
   if (available > radius * 2.0f)
@@ -981,19 +1014,25 @@ void ImGuiManager::BuildFPSWindow() {
   DrawPhaseLegend(timings, ImGui::GetContentRegionAvail().x);
 
   ImGui::Spacing();
-  if (history.size() >= 2) {
-    const std::vector<double> ordered = history.Ordered();
-    frame_times_.resize(ordered.size());
-    for (size_t i = 0; i < ordered.size(); ++i)
-      frame_times_[i] = static_cast<float>(ordered[i]);
-
-    const int plot_count = static_cast<int>(
-        std::min<size_t>(frame_times_.size(), static_cast<size_t>(INT_MAX)));
-    const float plot_max =
-        std::max(static_cast<float>(budget_ms) * 1.6f,
-                 static_cast<float>(history.Slowest()) * 1.1f);
-    ImGui::PlotLines("##frame_time", frame_times_.data(), plot_count, 0, nullptr,
-                     0.0f, plot_max, ImVec2(-FLT_MIN, U(48.0f)));
+  if (plot_count >= 2 && ImGui::TreeNode("FPS samples")) {
+    if (ImGui::BeginTable("##fps_samples", 2, ImGuiTableFlags_RowBg)) {
+      ImGui::TableSetupColumn("Sample");
+      ImGui::TableSetupColumn("FPS");
+      ImGui::TableHeadersRow();
+      ImGuiListClipper clipper;
+      clipper.Begin(plot_count);
+      while (clipper.Step()) {
+        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex(0);
+          ImGui::Text("%d", i);
+          ImGui::TableSetColumnIndex(1);
+          ImGui::Text("%.1f", fps_samples_[i]);
+        }
+      }
+      ImGui::EndTable();
+    }
+    ImGui::TreePop();
   }
 
   ImGui::End();

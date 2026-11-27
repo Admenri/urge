@@ -417,6 +417,18 @@ const std::vector<ConfigField>& Fields() {
              ParseBoolean(value, config.input.pad_bindings);
        },
        nullptr, nullptr},
+      {"Input", "DisableF1", ConfigPersist::kOnChange,
+       [](const Config& config) { return BooleanText(config.input.disable_f1); },
+       [](Config& config, const std::string& value) {
+         config.input.disable_f1 = ParseBoolean(value, config.input.disable_f1);
+       },
+       nullptr, nullptr},
+      {"Input", "DisableF2", ConfigPersist::kOnChange,
+       [](const Config& config) { return BooleanText(config.input.disable_f2); },
+       [](Config& config, const std::string& value) {
+         config.input.disable_f2 = ParseBoolean(value, config.input.disable_f2);
+       },
+       nullptr, nullptr},
   };
   return fields;
 }

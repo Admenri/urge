@@ -23,9 +23,11 @@
 #include "core/audio/audio_service.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstring>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -55,8 +57,7 @@ namespace urge {
 namespace {
 
 constexpr size_t kBusCount = 4;
-
-constexpr size_t kMaxVoices = 24;
+constexpr size_t kMaxSEVoices = 16;
 
 // The audio thread mixes in these units and keeps about this much ahead of the
 // device.  A small queue keeps a late wake-up from starving the output without
@@ -82,6 +83,45 @@ constexpr ma_uint32 kDecodingBackendCount =
 constexpr size_t BusIndex(AudioBus bus) {
   return static_cast<size_t>(bus);
 }
+
+bool SoundPlaying(ma_sound* sound) {
+  return ma_sound_is_playing(sound) && !ma_sound_at_end(sound);
+}
+
+void ConfigurePlayback(ma_sound* sound, int32_t volume, int32_t pitch, float pos) {
+  ma_sound_set_volume(sound, volume / 100.0f);
+  ma_sound_set_pitch(sound, pitch / 100.0f);
+  const double frames = static_cast<double>(pos) *
+                        AudioService::kEngineSampleRate / 1000.0;
+  if (frames > 0.0 &&
+      frames < static_cast<double>(std::numeric_limits<ma_uint64>::max())) {
+    ma_sound_seek_to_pcm_frame(sound, static_cast<ma_uint64>(frames));
+  }
+}
+
+struct MusicChannel {
+  std::unique_ptr<AudioClip> clip;
+  std::string filename;
+  bool suspended = false;
+
+  bool Playing() const { return clip && SoundPlaying(clip->sound()); }
+
+  void Suspend() {
+    if (!Playing())
+      return;
+
+    // Stopping a miniaudio node leaves its decoder cursor unchanged.
+    ma_sound_stop(clip->sound());
+    suspended = true;
+  }
+
+  void Resume() {
+    if (suspended) {
+      suspended = false;
+      ma_sound_start(clip->sound());
+    }
+  }
+};
 
 SDL_AudioSpec EngineFormat() {
   SDL_AudioSpec spec = {};
@@ -337,189 +377,6 @@ void AudioClip::ShutdownFromService() {
   at_end_.store(false, std::memory_order_relaxed);
 }
 
-AudioChannel::AudioChannel(AudioService* service, AudioBus bus)
-    : service_(service), bus_(bus) {}
-
-AudioChannel::~AudioChannel() {
-  clip_.Close();
-}
-
-bool AudioChannel::Play(const std::string& filename,
-                        int32_t volume,
-                        int32_t pitch,
-                        float pos) {
-  if (!service_ || filename.empty())
-    return false;
-
-  if (!clip_.IsOpen() || filename_ != filename) {
-    if (!clip_.Open(service_, bus_, filename)) {
-      filename_.clear();
-      return false;
-    }
-
-    filename_ = filename;
-  }
-
-  paused_ = false;
-  pause_cursor_ = 0;
-
-  bool started = false;
-  const float gain = volume / 100.0f;
-  const float speed = pitch / 100.0f;
-  service_->RunSync([this, gain, speed, pos, &started] {
-    ma_sound* sound = clip_.sound();
-    ma_sound_set_looping(sound, looping_ ? MA_TRUE : MA_FALSE);
-    ma_sound_set_volume(sound, gain);
-    ma_sound_set_pitch(sound, speed);
-
-    if (pos > 0.0f) {
-      const double frames =
-          static_cast<double>(pos) * AudioService::kEngineSampleRate / 1000.0;
-      ma_sound_seek_to_pcm_frame(sound, static_cast<ma_uint64>(frames));
-    }
-
-    started = ma_sound_start(sound) == MA_SUCCESS;
-  });
-  return started;
-}
-
-void AudioChannel::Stop() {
-  paused_ = false;
-  pause_cursor_ = 0;
-
-  if (service_ && clip_.IsOpen())
-    service_->Post([this] {
-      if (clip_.IsOpen())
-        ma_sound_stop(clip_.sound());
-    });
-}
-
-void AudioChannel::Fade(int32_t time) {
-  if (time <= 0) {
-    Stop();
-    return;
-  }
-
-  paused_ = false;
-  pause_cursor_ = 0;
-
-  if (service_ && clip_.IsOpen())
-    service_->Post([this, time] {
-      if (clip_.IsOpen()) {
-        ma_sound_stop_with_fade_in_milliseconds(clip_.sound(),
-                                                static_cast<ma_uint64>(time));
-      }
-    });
-}
-
-float AudioChannel::Pos() {
-  if (!clip_.IsOpen())
-    return 0.0f;
-
-  return static_cast<float>(static_cast<double>(clip_.cursor_frames()) *
-                            1000.0 / AudioService::kEngineSampleRate);
-}
-
-bool AudioChannel::IsPlaying() {
-  return clip_.IsOpen() && clip_.playing();
-}
-
-void AudioChannel::Pause() {
-  if (!service_ || !clip_.IsOpen() || paused_)
-    return;
-
-  pause_cursor_ = clip_.cursor_frames();
-  paused_ = true;
-
-  service_->Post([this] {
-    if (clip_.IsOpen())
-      ma_sound_stop(clip_.sound());
-  });
-}
-
-void AudioChannel::Resume() {
-  if (!service_ || !paused_ || !clip_.IsOpen())
-    return;
-
-  paused_ = false;
-
-  const ma_uint64 frame = pause_cursor_;
-  service_->Post([this, frame] {
-    if (!clip_.IsOpen())
-      return;
-
-    ma_sound* sound = clip_.sound();
-    ma_sound_seek_to_pcm_frame(sound, frame);
-    ma_sound_start(sound);
-  });
-}
-
-void AudioChannel::SetLooping(bool looping) {
-  looping_ = looping;
-
-  if (service_ && clip_.IsOpen())
-    service_->Post([this, looping] {
-      if (clip_.IsOpen())
-        ma_sound_set_looping(clip_.sound(), looping ? MA_TRUE : MA_FALSE);
-    });
-}
-
-AudioEmit::AudioEmit(AudioService* service, AudioBus bus)
-    : service_(service), bus_(bus) {}
-
-AudioEmit::~AudioEmit() {
-  Reap(true);
-}
-
-bool AudioEmit::Play(const std::string& filename,
-                     int32_t volume,
-                     int32_t pitch) {
-  if (!service_ || filename.empty())
-    return false;
-
-  Reap(false);
-
-  auto clip = std::make_unique<AudioClip>();
-  if (!clip->Open(service_, bus_, filename))
-    return false;
-
-  AudioClip* sound_clip = clip.get();
-  service_->Post([sound_clip, volume, pitch] {
-    ma_sound* sound = sound_clip->sound();
-    ma_sound_set_volume(sound, volume / 100.0f);
-    ma_sound_set_pitch(sound, pitch / 100.0f);
-    ma_sound_start(sound);
-  });
-
-  queue_.push_back(std::move(clip));
-  return true;
-}
-
-void AudioEmit::Stop() {
-  Reap(true);
-}
-
-void AudioEmit::Reap(bool all) {
-  std::vector<std::unique_ptr<AudioClip>> dead;
-  while (!queue_.empty()) {
-    AudioClip* head = queue_.front().get();
-    if (!all && !head->at_end() && queue_.size() <= kMaxVoices)
-      break;
-
-    dead.push_back(std::move(queue_.front()));
-    queue_.pop_front();
-  }
-
-  if (dead.empty())
-    return;
-
-  // std::function needs a copyable capture, so the owning vector travels
-  // behind a shared_ptr; the clips uninit on the audio thread.
-  auto doomed = std::make_shared<std::vector<std::unique_ptr<AudioClip>>>(
-      std::move(dead));
-  service_->Post([doomed] { doomed->clear(); });
-}
-
 struct AudioService::Kernel {
   ma_log log = {};
   bool log_ready = false;
@@ -528,6 +385,12 @@ struct AudioService::Kernel {
   SDL_AudioSpec engine_format = {};
   SDL_AudioDeviceID device = 0;
   SDL_AudioStream* stream = nullptr;
+
+  // BGM, BGS and ME are single channels; SE voices are kept in start order.
+  std::array<MusicChannel, BusIndex(AudioBus::kSE)> music;
+  std::deque<std::unique_ptr<AudioClip>> se;
+
+  MusicChannel& Music(AudioBus id) { return music[BusIndex(id)]; }
 
 #if defined(OS_EMSCRIPTEN)
   PullState pull;
@@ -733,12 +596,119 @@ void AudioService::SetPaused(bool paused) {
   });
 }
 
-AudioChannel* AudioService::CreateStream(AudioBus bus) {
-  return new AudioChannel(this, bus);
+void AudioService::Play(AudioBus bus,
+                        const std::string& filename,
+                        int32_t volume,
+                        int32_t pitch,
+                        float pos) {
+  if (filename.empty())
+    return;
+
+  const bool looping = bus == AudioBus::kBGM || bus == AudioBus::kBGS;
+  if (looping) {
+    bool reused = false;
+    RunSync([&] {
+      auto& music = kernel_->Music(bus);
+      if (music.filename != filename || !(music.suspended || music.Playing()))
+        return;
+
+      // Replaying a running loop changes its settings without restarting it.
+      ma_sound* sound = music.clip->sound();
+      ma_sound_set_stop_time_in_pcm_frames(sound, std::numeric_limits<ma_uint64>::max());
+      ma_sound_set_fade_in_pcm_frames(sound, 1.0f, 1.0f, 0);
+      ConfigurePlayback(sound, volume, pitch, pos);
+      reused = true;
+    });
+    if (reused)
+      return;
+  }
+
+  // Load the replacement before touching any playing sound. A missing or
+  // invalid file must not pause the BGM or displace an existing SE voice.
+  auto clip = std::make_unique<AudioClip>();
+  if (!clip->Open(this, bus, filename))
+    return;
+
+  RunSync([&] {
+    ma_sound* sound = clip->sound();
+    ma_sound_set_looping(sound, looping ? MA_TRUE : MA_FALSE);
+    ConfigurePlayback(sound, volume, pitch, pos);
+
+    const bool suspended =
+        bus == AudioBus::kBGM && kernel_->Music(AudioBus::kME).Playing();
+    if (!suspended && ma_sound_start(sound) != MA_SUCCESS)
+      return;
+
+    if (bus == AudioBus::kSE) {
+      auto& voices = kernel_->se;
+      std::erase_if(voices, [](const auto& voice) {
+        return !SoundPlaying(voice->sound());
+      });
+      if (voices.size() == kMaxSEVoices)
+        voices.pop_front();
+      voices.push_back(std::move(clip));
+      return;
+    }
+
+    // No mix can run between starting the ME and suspending the BGM, or
+    // between replacing one ME with another.
+    if (bus == AudioBus::kME)
+      kernel_->Music(AudioBus::kBGM).Suspend();
+    kernel_->Music(bus) = {std::move(clip), filename, suspended};
+  });
 }
 
-AudioEmit* AudioService::CreateEmitter() {
-  return new AudioEmit(this, AudioBus::kSE);
+void AudioService::Stop(AudioBus bus) {
+  Post([this, bus] {
+    if (bus == AudioBus::kSE) {
+      kernel_->se.clear();
+      return;
+    }
+
+    kernel_->Music(bus) = {};
+    if (bus == AudioBus::kME)
+      ResumeBGMIfMEEnded();
+  });
+}
+
+void AudioService::Fade(AudioBus bus, int32_t time) {
+  if (time <= 0) {
+    Stop(bus);
+    return;
+  }
+  if (bus == AudioBus::kSE)
+    return;
+
+  Post([this, bus, time] {
+    auto& music = kernel_->Music(bus);
+    if (music.suspended) {
+      // A silent BGM cannot fade; cancel its scheduled resumption instead.
+      music = {};
+    } else if (music.Playing()) {
+      ma_sound_stop_with_fade_in_milliseconds(music.clip->sound(),
+                                              static_cast<ma_uint64>(time));
+    }
+  });
+}
+
+float AudioService::Pos(AudioBus bus) {
+  if (bus == AudioBus::kSE)
+    return 0.0f;
+
+  ma_uint64 frames = 0;
+  RunSync([&] {
+    const auto& music = kernel_->Music(bus);
+    if (music.clip)
+      ma_sound_get_cursor_in_pcm_frames(music.clip->sound(), &frames);
+  });
+  return static_cast<float>(static_cast<double>(frames) * 1000.0 /
+                            kEngineSampleRate);
+}
+
+void AudioService::ResumeBGMIfMEEnded() {
+  auto& bgm = kernel_->Music(AudioBus::kBGM);
+  if (bgm.suspended && !kernel_->Music(AudioBus::kME).Playing())
+    bgm.Resume();
 }
 
 void AudioService::Post(std::function<void()> work) {
@@ -811,6 +781,9 @@ void AudioService::UnregisterClip(AudioClip* clip) {
 }
 
 void AudioService::RefreshClips() {
+  // The web pull callback also reaches here after mixing. The RGSS handoff
+  // must happen even when the game is not calling Graphics.update.
+  ResumeBGMIfMEEnded();
   for (AudioClip* clip : clips_)
     clip->RefreshState();
 }

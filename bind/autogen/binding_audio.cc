@@ -21,7 +21,7 @@ namespace binding {
 
 // --- GENERATED BEGIN ---
 // -------------------------------------------------------------------------
-// Audio  (core/audio/audio.h:40-92)
+// Audio  (core/audio/audio.h:38-90)
 // -------------------------------------------------------------------------
 
 RB_FUNC(Audio_SetupMIDI) {

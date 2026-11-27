@@ -81,7 +81,7 @@ class ImGuiManager : public Singleton<ImGuiManager> {
   bool defaults_captured_ = false;
   std::vector<std::string> output_devices_;
   bool output_devices_stale_ = true;
-  std::vector<float> frame_times_;
+  std::vector<float> fps_samples_;
   float ui_scale_ = 1.0f;
 
   struct FpsWindowGeometry {

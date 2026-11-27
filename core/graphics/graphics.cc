@@ -31,6 +31,7 @@
 
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_hints.h"
+#include "SDL3/SDL_keycode.h"
 #include "SDL3/SDL_stdinc.h"
 #include "SDL3/SDL_system.h"
 #include "SDL3/SDL_timer.h"
@@ -211,6 +212,7 @@ Graphics::Graphics(URGE_EXCEPT) : frame_rate_(Config::Get().xp() ? 40 : 60) {
   if (exception_state.HadException())
     return;
 
+  GetRenderStats().present_history.Clear();
   ImGuiManager::Reset(new ImGuiManager(window_));
 }
 
@@ -253,8 +255,6 @@ void Graphics::Update(URGE_EXCEPT) {
 
   const double bitmap_before_update = stats.current.bitmap_total_ms();
 
-  Audio::Get().Update();
-
   profiler_->BeginRecord(Profiler::kRender);
   if (!frozen_)
     root_->Render(screen_, Color::Black());
@@ -293,7 +293,6 @@ void Graphics::Update(URGE_EXCEPT) {
       timings.phase(FramePhase::kBitmap) + timings.phase(FramePhase::kPresent);
   timings.set_phase(FramePhase::kOther, timings.total_ms - measured);
 
-  stats.frame_history.Push(timings.total_ms);
   stats.timing_history.Push(timings);
   stats.run.Add(timings);
 
@@ -526,8 +525,12 @@ bool Graphics::UpdateBackgroundState() {
     if (auto* audio = Audio::TryGet())
       audio->SetBackgroundPaused(paused);
     RequestFrameReset();
-    if (!paused)
+    if (paused) {
+      last_present_tick_ = 0;
+      GetRenderStats().present_history.Clear();
+    } else {
       profiler_->ResumeFromBackground();
+    }
     LOGGER_INFO("[Graphics] background pause {}", paused ? "on" : "off");
   }
 
@@ -610,8 +613,10 @@ ATTR_DEF(Graphics, bool, FrameSkip) {
 
 ATTR_DEF(Graphics, bool, Fullscreen) {
   if (value.has_value()) {
-    SDL_SetWindowFullscreen(window_, *value);
-    present_.configured = false;
+    if (SDL_SetWindowFullscreen(window_, *value))
+      present_.configured = false;
+    else
+      LOGGER_WARN("[Graphics] Could not change fullscreen: {}", SDL_GetError());
     return std::nullopt;
   } else {
     return (SDL_GetWindowFlags(window_) & SDL_WINDOW_FULLSCREEN) != 0;
@@ -635,6 +640,36 @@ void Graphics::PushEvent(const SDL_Event& event) {
   pending_events_.push_back(event);
 }
 
+#if !defined(OS_EMSCRIPTEN)
+bool Graphics::HandleFullscreenShortcut(const SDL_Event& event) {
+  if ((event.type != SDL_EVENT_KEY_DOWN && event.type != SDL_EVENT_KEY_UP) ||
+      event.key.windowID != SDL_GetWindowID(window_))
+    return false;
+
+  const auto scancode = event.key.scancode;
+  if (scancode != SDL_SCANCODE_RETURN && scancode != SDL_SCANCODE_KP_ENTER)
+    return false;
+
+  auto& held = fullscreen_shortcut_keys_[scancode == SDL_SCANCODE_KP_ENTER];
+  if (event.type == SDL_EVENT_KEY_UP) {
+    const bool consumed = held;
+    held = false;
+    return consumed;
+  }
+
+  if (!event.key.repeat) {
+    constexpr SDL_Keymod kOtherMods =
+        SDL_KMOD_CTRL | SDL_KMOD_SHIFT | SDL_KMOD_GUI | SDL_KMOD_MODE;
+    held = (event.key.mod & SDL_KMOD_ALT) && !(event.key.mod & kOtherMods);
+    if (held)
+      Attr_Fullscreen(!Attr_Fullscreen().value_or(false));
+  }
+
+  // Consume repeats until Enter is released even if Alt is released first.
+  return held;
+}
+#endif
+
 void Graphics::ProcessEvents(URGE_EXCEPT) {
   auto& imgui = ImGuiManager::Get();
 
@@ -646,6 +681,10 @@ void Graphics::ProcessEvents(URGE_EXCEPT) {
 
   bool quit = false;
   for (SDL_Event& event : pending_events_) {
+#if !defined(OS_EMSCRIPTEN)
+    if (HandleFullscreenShortcut(event))
+      continue;
+#endif
     imgui.ProcessEvent(event);
 
     Input::Get().ProcessGamepadEvents(&event);
@@ -887,9 +926,20 @@ void Graphics::PresentInternal(URGE_EXCEPT) {
   CountSubmit(false);
   GPUDevice::Get().queue().Submit(1, &command);
 
-#if !defined(OS_EMSCRIPTEN)
-  surface.Present();
+  // Measure the cadence of presented frames, not logical updates. The web
+  // presents implicitly after submission; native surfaces report success.
+#if defined(OS_EMSCRIPTEN)
+  const bool presented = true;
+#else
+  const bool presented = surface.Present();
 #endif
+  if (presented) {
+    const uint64_t now = SDL_GetPerformanceCounter();
+    if (last_present_tick_ != 0)
+      GetRenderStats().present_history.Push(
+          TicksToMilliseconds(now - last_present_tick_));
+    last_present_tick_ = now;
+  }
 
   profiler_->EndRecord();
 

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -156,6 +157,10 @@ class Graphics : public Singleton<Graphics> {
   friend class ScreenRootNode;
 
   void ProcessEvents(URGE_EXCEPT);
+#if !defined(OS_EMSCRIPTEN)
+  bool HandleFullscreenShortcut(const SDL_Event& event);
+  std::array<bool, 2> fullscreen_shortcut_keys_{};
+#endif
   void PresentInternal(URGE_EXCEPT);
   // Poll mode owns the thread between frames, so the only place the script can
   // be held is inside Update(); events keep being pumped so the window can
@@ -190,6 +195,7 @@ class Graphics : public Singleton<Graphics> {
   FrameLimiter limiter_;
 
   uint64_t frame_begin_tick_ = 0;
+  uint64_t last_present_tick_ = 0;
 
   double pace_delay_ms_ = 0.0;
 

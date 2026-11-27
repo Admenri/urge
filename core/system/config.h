@@ -99,6 +99,8 @@ class Config : public Singleton<Config> {
 
   struct {
     bool pad_bindings = false;
+    bool disable_f1 = false;
+    bool disable_f2 = false;
   } input;
 
   std::vector<KeySym> key_bindings;

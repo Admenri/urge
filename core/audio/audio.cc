@@ -25,7 +25,6 @@
 #include <algorithm>
 
 #include "core/audio/audio_service.h"
-#include "core/common/logger.h"
 #include "core/system/config.h"
 
 namespace urge {
@@ -44,15 +43,6 @@ Audio::Audio()
   if (!service_)
     return;
 
-  bgm_.reset(service_->CreateStream(AudioBus::kBGM));
-  bgs_.reset(service_->CreateStream(AudioBus::kBGS));
-  me_.reset(service_->CreateStream(AudioBus::kME));
-  se_.reset(service_->CreateEmitter());
-
-  bgm_->SetLooping(true);
-  bgs_->SetLooping(true);
-  me_->SetLooping(false);
-
   output_device_ = service_->output_device();
   ApplyVolumes();
 }
@@ -68,74 +58,69 @@ void Audio::BGMPlay(std::string filename,
                     int32_t volume,
                     int32_t pitch,
                     float pos) {
-  if (bgm_)
-    bgm_->Play(filename, ClampVolume(volume), pitch, pos);
+  if (service_)
+    service_->Play(AudioBus::kBGM, filename, ClampVolume(volume), pitch, pos);
 }
 
 void Audio::BGMStop() {
-  if (bgm_)
-    bgm_->Stop();
+  if (service_)
+    service_->Stop(AudioBus::kBGM);
 }
 
 void Audio::BGMFade(int32_t time) {
-  if (bgm_)
-    bgm_->Fade(time);
+  if (service_)
+    service_->Fade(AudioBus::kBGM, time);
 }
 
 float Audio::BGMPos() {
-  return bgm_ ? bgm_->Pos() : 0.0f;
+  return service_ ? service_->Pos(AudioBus::kBGM) : 0.0f;
 }
 
 void Audio::BGSPlay(std::string filename,
                     int32_t volume,
                     int32_t pitch,
                     float pos) {
-  if (bgs_)
-    bgs_->Play(filename, ClampVolume(volume), pitch, pos);
+  if (service_)
+    service_->Play(AudioBus::kBGS, filename, ClampVolume(volume), pitch, pos);
 }
 
 void Audio::BGSStop() {
-  if (bgs_)
-    bgs_->Stop();
+  if (service_)
+    service_->Stop(AudioBus::kBGS);
 }
 
 void Audio::BGSFade(int32_t time) {
-  if (bgs_)
-    bgs_->Fade(time);
+  if (service_)
+    service_->Fade(AudioBus::kBGS, time);
 }
 
 float Audio::BGSPos() {
-  return bgs_ ? bgs_->Pos() : 0.0f;
+  return service_ ? service_->Pos(AudioBus::kBGS) : 0.0f;
 }
 
 void Audio::MEPlay(std::string filename, int32_t volume, int32_t pitch) {
-  if (!me_)
-    return;
-
-  if (bgm_ && bgm_->IsPlaying())
-    bgm_->Pause();
-
-  me_->Play(filename, ClampVolume(volume), pitch);
+  if (service_)
+    service_->Play(AudioBus::kME, filename, ClampVolume(volume), pitch);
 }
 
 void Audio::MEStop() {
-  if (me_)
-    me_->Stop();
+  if (service_)
+    service_->Stop(AudioBus::kME);
 }
 
 void Audio::MEFade(int32_t time) {
-  if (me_)
-    me_->Fade(time);
+  if (service_)
+    service_->Fade(AudioBus::kME, time);
 }
 
 void Audio::SEPlay(std::string filename, int32_t volume, int32_t pitch) {
-  if (se_)
-    se_->Play(filename, ClampVolume(volume), pitch);
+  if (service_)
+    service_->Play(AudioBus::kSE, filename, ClampVolume(volume), pitch);
 }
 
 void Audio::SEStop() {
-  if (se_)
-    se_->Stop();
+  if (service_)
+    service_->Stop(AudioBus::kSE);
 }
 
 ATTR_DEF(Audio, int32_t, MasterVolume) {
@@ -223,18 +208,6 @@ bool Audio::SetOutputDevice(std::string name) {
 void Audio::SetBackgroundPaused(bool paused) {
   if (service_)
     service_->SetPaused(paused);
-}
-
-void Audio::Update() {
-  if (!bgm_)
-    return;
-
-  if (me_ && me_->IsPlaying()) {
-    if (bgm_->IsPlaying())
-      bgm_->Pause();
-  } else if (bgm_->IsPausing()) {
-    bgm_->Resume();
-  }
 }
 
 void Audio::ApplyVolumes() {
