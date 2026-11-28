@@ -85,6 +85,7 @@ class AudioClip {
  private:
   friend class AudioService;
 
+  bool LoadFile(AudioService* service, const std::string& filename);
   bool Prepare(AudioService* service, AudioBus bus, const std::string& label);
   void RefreshState();
   // Runs on the audio thread when the service is torn down; the owner still
@@ -165,6 +166,10 @@ class AudioService {
   void StopWorker();
   void WorkerLoop();
   void MixToStream();
+  void PlaySE(const std::string& filename,
+              int32_t volume,
+              int32_t pitch,
+              float pos);
   void ResumeBGMIfMEEnded();
 
   // Audio thread only.

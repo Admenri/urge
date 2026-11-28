@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check RGSS audio transitions and the SE voice limit on a real engine build."""
+"""Check RGSS audio transitions and SE mixing on a real engine build."""
 from __future__ import annotations
 
 import argparse
@@ -28,13 +28,52 @@ def se_frequency(index: int) -> int:
     return 400 + 100 * index
 
 
-def write_tone(path: Path, frequency: int, seconds: float) -> None:
-    # All frequencies divide into whole cycles every 10 ms.
-    frames = struct.pack("<480h", *(int(1000 * math.sin(math.tau * frequency * i / TONE_RATE))
-                                   for i in range(480)))
+def write_pcm(path: Path, frames: bytes) -> None:
     with wave.open(str(path), "wb") as output:
         output.setparams((1, 2, TONE_RATE, 0, "NONE", "not compressed"))
-        output.writeframes(frames * round(seconds * 100))
+        output.writeframes(frames)
+
+
+def write_tone(path: Path, frequency: int, seconds: float, amplitude: int = 1000) -> None:
+    # All frequencies divide into whole cycles every 10 ms.
+    frames = struct.pack("<480h", *(int(amplitude * math.sin(math.tau * frequency * i / TONE_RATE))
+                                   for i in range(480)))
+    write_pcm(path, frames * round(seconds * 100))
+
+
+def check_se_bursts(samples: tuple[float, ...], block: int) -> None:
+    sections: list[tuple[int, int]] = []
+    for start in range(0, len(samples), block):
+        end = start + block
+        if max(map(abs, samples[start:end])) < 0.015:
+            continue
+        if sections and start - sections[-1][1] < CAPTURE_RATE // 10:
+            sections[-1] = (sections[-1][0], end)
+        else:
+            sections.append((start, end))
+    if len(sections) < 5:
+        raise ValueError("missing separately captured SE bursts or eviction")
+    reference, burst, pitched, staggered, eviction = (samples[a:b] for a, b in sections[-5:])
+    reference_peak = max(map(abs, reference))
+    burst_peak = max(map(abs, burst))
+    staggered_peak = max(map(abs, staggered))
+    jump = max(abs(a - b) for a, b in zip(eviction, eviction[1:]))
+    print(f"SE capture: single={reference_peak:.3f}, burst={burst_peak:.3f}, "
+          f"staggered={staggered_peak:.3f}, eviction step={jump:.3f}")
+    if not 0.9 * reference_peak <= burst_peak <= 1.1 * reference_peak:
+        raise ValueError("64 identical triggers should sound like one SE")
+    window = pitched[3 * block:11 * block]
+    for frequency in (100, 150):
+        cosine = sum(sample * math.cos(math.tau * frequency * i / CAPTURE_RATE)
+                     for i, sample in enumerate(window))
+        sine = sum(sample * math.sin(math.tau * frequency * i / CAPTURE_RATE)
+                   for i, sample in enumerate(window))
+        if math.hypot(cosine, sine) < block * 0.4:
+            raise ValueError(f"missing {frequency} Hz voice when triggering the same SE at two pitches")
+    if len(staggered) < len(reference) + CAPTURE_RATE // 5 or not 0.8 < staggered_peak < 1.0:
+        raise ValueError("staggered SE retriggers were dropped or clipped")
+    if max(eviction) < 0.15 or len(eviction) > CAPTURE_RATE // 2 or jump > 0.03:
+        raise ValueError("stealing a playing SE failed to end it smoothly")
 
 
 def check_mix(path: Path) -> None:
@@ -68,6 +107,7 @@ def check_mix(path: Path) -> None:
         raise ValueError("missing expected SE mix: " + ", ".join(wanted.values()))
     if max(map(abs, samples[-CAPTURE_RATE // 5:])) > 0.001:
         raise ValueError("SE did not end after one play")
+    check_se_bursts(samples, block)
 
 
 def main() -> int:
@@ -98,6 +138,12 @@ def main() -> int:
         seconds = {0: 2.8, 1: 0.14}.get(i, 1.6)
         write_tone(directory / f"se{i}.wav", se_frequency(i), seconds)
 
+    write_tone(directory / "se-burst.wav", 100, 0.40, amplitude=24000)
+    # A held sample with smooth natural edges isolates any jump on eviction.
+    release = [int(8192 * min(i, TONE_RATE - 1 - i, 480) / 480)
+               for i in range(TONE_RATE)]
+    write_pcm(directory / "se-release.wav", struct.pack(f"<{len(release)}h", *release))
+
     env = {key: value for key, value in os.environ.items()
            if not key.upper().startswith(("RUBY", "URGE_", "SDL_"))}
     env.update(SDL_AUDIO_DRIVER="disk", SDL_AUDIO_DEVICE_SAMPLE_FRAMES="512",
@@ -117,7 +163,7 @@ def main() -> int:
     except (ValueError, subprocess.TimeoutExpired) as error:
         print(f"FAIL: {error}")
         return 1
-    print("ALL_OK: looping, BGM/ME transitions, SE slot reuse and oldest-first eviction")
+    print("ALL_OK: looping, BGM/ME transitions, SE voice limit and burst mixing")
     return 0
 
 

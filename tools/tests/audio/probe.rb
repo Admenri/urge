@@ -82,7 +82,30 @@ begin
   Audio.se_play('se16.wav')
   sleep 0.25 # The new voice fills the free slot without evicting SE 0.
   Audio.se_play('se17.wav')
-  sleep 3.0  # SE 17 evicts SE 0; the remaining voices end without looping.
+  sleep 2.4  # SE 17 evicts SE 0; the remaining voices end without looping.
+
+  Audio.se_play('se-burst.wav', 20)
+  sleep 0.7
+  64.times { Audio.se_play('se-burst.wav', 20) }
+  sleep 0.7
+
+  Audio.se_play('se-burst.wav', 20)
+  Audio.se_play('se-burst.wav', 20, 150) # Same path, deliberately different pitch.
+  sleep 0.7
+
+  # Retrigger across mix iterations as well: these must still play, and their
+  # combined peaks must stay in range even when the single burst is coalesced.
+  16.times do
+    Audio.se_play('se-burst.wav')
+    sleep 0.023
+  end
+  sleep 0.7
+
+  Audio.se_play('se-release.wav')
+  15.times { |i| Audio.se_play("se#{i + 2}.wav", 0) }
+  sleep 0.20
+  Audio.se_play('se17.wav', 0) # Steal a voice during its nonzero plateau.
+  sleep 0.5
 
   File.write('audio-results.txt', "ALL_OK\n")
 rescue => e

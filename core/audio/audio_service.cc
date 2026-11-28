@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstring>
 #include <iterator>
 #include <limits>
@@ -58,6 +59,10 @@ namespace {
 
 constexpr size_t kBusCount = 4;
 constexpr size_t kMaxSEVoices = 16;
+constexpr ma_uint64 kSECoalesceFrames =
+    AudioService::kEngineSampleRate * 12 / 1000;
+constexpr ma_uint64 kSEAttackFrames = AudioService::kEngineSampleRate / 1000;
+constexpr ma_uint64 kSEReleaseFrames = AudioService::kEngineSampleRate * 4 / 1000;
 
 // The audio thread mixes in these units and keeps about this much ahead of the
 // device.  A small queue keeps a late wake-up from starving the output without
@@ -98,6 +103,66 @@ void ConfigurePlayback(ma_sound* sound, int32_t volume, int32_t pitch, float pos
     ma_sound_seek_to_pcm_frame(sound, static_cast<ma_uint64>(frames));
   }
 }
+
+// Apply linked stereo gain before SDL converts the float mix for the device.
+// Two blocks (4 ms) of delay let the gain ramp down before an overload, rather
+// than clipping individual samples or stepping the gain at a mix boundary.
+class OutputLimiter {
+ public:
+  static void Process(void* userdata, float* samples, ma_uint64 frames) {
+    static_cast<OutputLimiter*>(userdata)->Apply(samples, frames);
+  }
+
+ private:
+  static constexpr size_t kBlockFrames = AudioService::kEngineSampleRate / 500;
+  static constexpr float kCeiling = 0.90f;  // Headroom for device resampling.
+  static constexpr float kRelease = 0.04f;  // About 50 ms time constant.
+
+  void Apply(float* samples, ma_uint64 frames) {
+    for (ma_uint64 i = 0; i < frames; ++i) {
+      auto& delayed = delay_[index_];
+      for (float& sample : delayed) {
+        const float input = *samples;
+        block_peak_ = std::max(block_peak_, std::abs(input));
+        *samples++ = sample * gain_;
+        sample = input;
+      }
+      gain_ += gain_step_;
+      if (++index_ == delay_.size())
+        index_ = 0;
+      if (index_ % kBlockFrames != 0)
+        continue;
+
+      gain_ = target_gain_;
+      const float limit = block_peak_ > kCeiling ? kCeiling / block_peak_ : 1.0f;
+      // Both ends of the ramp respect the peak of the block being emitted;
+      // the far end also respects the next block, which is already buffered.
+      target_gain_ = std::min({previous_limit_, limit,
+                               gain_ + (1.0f - gain_) * kRelease});
+      gain_step_ = (target_gain_ - gain_) / kBlockFrames;
+      previous_limit_ = limit;
+      block_peak_ = 0.0f;
+    }
+  }
+
+  std::array<std::array<float, AudioService::kEngineChannels>, kBlockFrames * 2>
+      delay_{};
+  size_t index_ = 0;
+  float block_peak_ = 0.0f;
+  float previous_limit_ = 1.0f;
+  float gain_ = 1.0f;
+  float target_gain_ = 1.0f;
+  float gain_step_ = 0.0f;
+};
+
+struct SEVoice {
+  std::unique_ptr<AudioClip> clip;
+  std::string filename;
+  int32_t volume;
+  int32_t pitch;
+  float pos;
+  ma_uint64 started_at;
+};
 
 struct MusicChannel {
   std::unique_ptr<AudioClip> clip;
@@ -239,11 +304,17 @@ bool AudioClip::Open(AudioService* service,
                      const std::string& filename) {
   Close();
 
-  if (!service || filename.empty())
+  if (!service || filename.empty() || !LoadFile(service, filename))
     return false;
 
-  // The file reaches memory on the caller's thread; the decoder and the sound
-  // that reads it are built on the audio thread.
+  bool opened = false;
+  const std::string label = "the audio file '" + filename + "'";
+  service->RunSync([&] { opened = Prepare(service, bus, label); });
+  return opened;
+}
+
+bool AudioClip::LoadFile(AudioService* service, const std::string& filename) {
+  // Read on the caller's thread; decode and attach the sound on the mixer.
   bytes_ = ReadWholeFile(filename);
   if (bytes_.empty())
     return false;
@@ -252,10 +323,7 @@ bool AudioClip::Open(AudioService* service,
     bytes_.clear();
     return false;
   }
-  bool opened = false;
-  const std::string label = "the audio file '" + filename + "'";
-  service->RunSync([&] { opened = Prepare(service, bus, label); });
-  return opened;
+  return true;
 }
 
 bool AudioClip::OpenMemory(AudioService* service,
@@ -385,12 +453,41 @@ struct AudioService::Kernel {
   SDL_AudioSpec engine_format = {};
   SDL_AudioDeviceID device = 0;
   SDL_AudioStream* stream = nullptr;
+  OutputLimiter limiter;
 
   // BGM, BGS and ME are single channels; SE voices are kept in start order.
   std::array<MusicChannel, BusIndex(AudioBus::kSE)> music;
-  std::deque<std::unique_ptr<AudioClip>> se;
+  std::deque<SEVoice> se;
+  std::deque<std::unique_ptr<AudioClip>> se_releasing;
 
   MusicChannel& Music(AudioBus id) { return music[BusIndex(id)]; }
+
+  void PruneSE() {
+    std::erase_if(se, [](const auto& voice) {
+      return !SoundPlaying(voice.clip->sound());
+    });
+    std::erase_if(se_releasing, [](const auto& clip) {
+      ma_sound* sound = clip->sound();
+      return !SoundPlaying(sound) ||
+             ma_sound_get_current_fade_volume(sound) == 0.0f;
+    });
+  }
+
+  void ReleaseSE(SEVoice& voice, ma_uint64 now) {
+    // Nothing to fade if the voice has not reached the mixer yet.
+    if (voice.started_at == now)
+      return;
+
+    // Keep release tails separate from the 16 playable slots, but bounded.
+    if (se_releasing.size() == kMaxSEVoices)
+      se_releasing.pop_front();
+
+    // Let the fader run to zero before detaching. A miniaudio scheduled stop
+    // would skip the whole render block that straddles the stop time.
+    ma_sound_set_fade_in_pcm_frames(voice.clip->sound(), -1.0f, 0.0f,
+                                   kSEReleaseFrames);
+    se_releasing.push_back(std::move(voice.clip));
+  }
 
 #if defined(OS_EMSCRIPTEN)
   PullState pull;
@@ -438,6 +535,8 @@ AudioService* AudioService::Create(const std::string& output,
   engine_config.sampleRate = kEngineSampleRate;
   engine_config.channels = kEngineChannels;
   engine_config.noDevice = MA_TRUE;
+  engine_config.onProcess = &OutputLimiter::Process;
+  engine_config.pProcessUserData = &kernel.limiter;
   if (ma_engine_init(&engine_config, &kernel.engine) != MA_SUCCESS) {
     LOGGER_ERROR("the audio engine did not start");
     return nullptr;
@@ -603,6 +702,10 @@ void AudioService::Play(AudioBus bus,
                         float pos) {
   if (filename.empty())
     return;
+  if (bus == AudioBus::kSE) {
+    PlaySE(filename, volume, pitch, pos);
+    return;
+  }
 
   const bool looping = bus == AudioBus::kBGM || bus == AudioBus::kBGS;
   if (looping) {
@@ -624,7 +727,7 @@ void AudioService::Play(AudioBus bus,
   }
 
   // Load the replacement before touching any playing sound. A missing or
-  // invalid file must not pause the BGM or displace an existing SE voice.
+  // invalid file must not pause the BGM.
   auto clip = std::make_unique<AudioClip>();
   if (!clip->Open(this, bus, filename))
     return;
@@ -639,17 +742,6 @@ void AudioService::Play(AudioBus bus,
     if (!suspended && ma_sound_start(sound) != MA_SUCCESS)
       return;
 
-    if (bus == AudioBus::kSE) {
-      auto& voices = kernel_->se;
-      std::erase_if(voices, [](const auto& voice) {
-        return !SoundPlaying(voice->sound());
-      });
-      if (voices.size() == kMaxSEVoices)
-        voices.pop_front();
-      voices.push_back(std::move(clip));
-      return;
-    }
-
     // No mix can run between starting the ME and suspending the BGM, or
     // between replacing one ME with another.
     if (bus == AudioBus::kME)
@@ -658,9 +750,59 @@ void AudioService::Play(AudioBus bus,
   });
 }
 
+void AudioService::PlaySE(const std::string& filename,
+                          int32_t volume,
+                          int32_t pitch,
+                          float pos) {
+  bool duplicate = false;
+  RunSync([&] {
+    const ma_uint64 now = ma_engine_get_time_in_pcm_frames(engine());
+    const auto& voices = kernel_->se;
+    duplicate = std::any_of(
+        voices.rbegin(), voices.rend(), [&](const SEVoice& voice) {
+          return now - voice.started_at < kSECoalesceFrames &&
+                 voice.pitch == pitch && voice.volume == volume &&
+                 voice.pos == pos && voice.filename == filename &&
+                 SoundPlaying(voice.clip->sound());
+        });
+  });
+  if (duplicate)
+    return;
+
+  // Skip the file read and decoder setup entirely for a duplicate trigger.
+  auto clip = std::make_unique<AudioClip>();
+  if (!clip->LoadFile(this, filename))
+    return;
+
+  const std::string label = "the audio file '" + filename + "'";
+  RunSync([&] {
+    if (!clip->Prepare(this, AudioBus::kSE, label))
+      return;
+
+    ma_sound* sound = clip->sound();
+    ConfigurePlayback(sound, volume, pitch, pos);
+    ma_sound_set_fade_in_pcm_frames(sound, 0.0f, 1.0f, kSEAttackFrames);
+    if (ma_sound_start(sound) != MA_SUCCESS)
+      return;
+
+    kernel_->PruneSE();
+    const ma_uint64 now = ma_engine_get_time_in_pcm_frames(engine());
+    auto& voices = kernel_->se;
+    if (voices.size() == kMaxSEVoices) {
+      kernel_->ReleaseSE(voices.front(), now);
+      voices.pop_front();
+    }
+    voices.push_back({std::move(clip), filename, volume, pitch, pos, now});
+  });
+}
+
 void AudioService::Stop(AudioBus bus) {
   Post([this, bus] {
     if (bus == AudioBus::kSE) {
+      kernel_->PruneSE();
+      const ma_uint64 now = ma_engine_get_time_in_pcm_frames(engine());
+      for (auto& voice : kernel_->se)
+        kernel_->ReleaseSE(voice, now);
       kernel_->se.clear();
       return;
     }
@@ -784,6 +926,7 @@ void AudioService::RefreshClips() {
   // The web pull callback also reaches here after mixing. The RGSS handoff
   // must happen even when the game is not calling Graphics.update.
   ResumeBGMIfMEEnded();
+  kernel_->PruneSE();
   for (AudioClip* clip : clips_)
     clip->RefreshState();
 }
@@ -971,6 +1114,7 @@ void AudioService::CloseOutput() {
     SDL_CloseAudioDevice(kernel.device);
     kernel.device = 0;
   }
+  kernel.limiter = {};
 }
 
 }
